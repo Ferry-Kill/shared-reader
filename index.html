@@ -1210,9 +1210,15 @@ function applyReaderStyles() {
 }
 
 function onStyleChange() {
+  const savedCfi = currentCfi;
   applyReaderStyles();
   if (currentBook) {
-    setTimeout(() => loadHighlights(currentBook.id), 300);
+    setTimeout(() => {
+      loadHighlights(currentBook.id);
+      if (savedCfi && rendition) {
+        rendition.display(savedCfi);
+      }
+    }, 400);
   }
 }
 document.getElementById('brightnessSlider').addEventListener('input', applyReaderStyles);
