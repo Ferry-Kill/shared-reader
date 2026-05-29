@@ -1094,12 +1094,14 @@ async function openBook(bookId) {
           const dx = Math.abs(e.changedTouches[0].clientX - tapX);
           const dy = Math.abs(e.changedTouches[0].clientY - tapY);
           if (dt < 250 && dx < 10 && dy < 10) {
-            // Skip if highlight menu just handled this tap
             if (hlMenuJustOpened) { hlMenuJustOpened = false; return; }
             const sel = doc.getSelection();
             if (!sel || sel.toString().trim().length === 0) {
-              hideHighlightMenu();
-              toggleUI();
+              if (document.getElementById('highlightMenu').classList.contains('show')) {
+                hideHighlightMenu();
+              } else {
+                toggleUI();
+              }
             }
           }
         });
@@ -1306,8 +1308,13 @@ function showHighlightMenu(x, y) {
 
 let activeHlMenuId = null;
 let hlMenuJustOpened = false;
+let hlMenuDebounce = 0;
 
 function showExistingHighlightMenu(hlId, e) {
+  const now = Date.now();
+  if (now - hlMenuDebounce < 400) return;
+  hlMenuDebounce = now;
+
   if (activeHlMenuId === hlId && document.getElementById('highlightMenu').classList.contains('show')) {
     hideHighlightMenu();
     return;
