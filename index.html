@@ -956,6 +956,7 @@ async function openBook(bookId) {
       if (doc && !doc._navSetup) {
         doc._navSetup = true;
         setupIframeTouchNav(doc);
+        doc.addEventListener('contextmenu', (e) => e.preventDefault());
       }
     });
 
