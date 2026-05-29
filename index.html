@@ -932,6 +932,7 @@ async function openBook(bookId) {
       currentCfi = location.start.cfi;
       updateProgress(location);
       saveProgress(location);
+      hideHighlightMenu();
     });
 
     rendition.on('selected', (cfiRange, contents) => {
