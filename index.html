@@ -589,9 +589,6 @@ body {
 <!-- Reader View -->
 <div id="readerView" class="view">
   <div id="epubContainer"></div>
-  <div id="tapPrev" style="position:absolute;top:0;left:0;width:30%;height:100%;z-index:5;"></div>
-  <div id="tapNext" style="position:absolute;top:0;right:0;width:30%;height:100%;z-index:5;"></div>
-  <div id="tapCenter" style="position:absolute;top:0;left:30%;width:40%;height:100%;z-index:5;"></div>
 
   <div class="reader-header" id="readerHeader">
     <button class="reader-back" id="backBtn">←</button>
@@ -954,7 +951,10 @@ async function openBook(bookId) {
       }
     });
 
-    rendition.on('rendered', (section) => {});
+    rendition.on('rendered', (section) => {
+      const doc = rendition.getContents()[0]?.document;
+      if (doc) setupIframeTouchNav(doc);
+    });
 
     showLoading(false);
 
@@ -965,9 +965,37 @@ async function openBook(bookId) {
   }
 }
 
-document.getElementById('tapPrev').addEventListener('click', () => { if (rendition) rendition.prev(); });
-document.getElementById('tapNext').addEventListener('click', () => { if (rendition) rendition.next(); });
-document.getElementById('tapCenter').addEventListener('click', () => { toggleUI(); });
+function setupIframeTouchNav(doc) {
+  let startX = 0, startY = 0, startTime = 0;
+  doc.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+  }, { passive: true });
+  doc.addEventListener('touchend', (e) => {
+    if (!rendition) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    const dt = Date.now() - startTime;
+
+    // Swipe (any duration, big horizontal movement)
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx > 0) rendition.prev();
+      else rendition.next();
+      return;
+    }
+
+    // Quick tap only (< 300ms, minimal movement) = navigation
+    if (dt < 300 && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+      const w = doc.documentElement.clientWidth;
+      const x = e.changedTouches[0].clientX;
+      if (x < w * 0.35) rendition.prev();
+      else if (x > w * 0.65) rendition.next();
+      else toggleUI();
+    }
+    // Long press (>= 300ms) = let browser handle text selection
+  });
+}
 
 function toggleUI() {
   uiVisible = !uiVisible;
@@ -1316,20 +1344,6 @@ function showLoading(show) {
   document.getElementById('loading').classList.toggle('show', show);
 }
 
-// Swipe on overlay zones
-let swipeStartX = 0;
-['tapPrev','tapNext','tapCenter'].forEach(id => {
-  const el = document.getElementById(id);
-  el.addEventListener('touchstart', (e) => { swipeStartX = e.touches[0].clientX; }, { passive: true });
-  el.addEventListener('touchend', (e) => {
-    if (!rendition) return;
-    const dx = e.changedTouches[0].clientX - swipeStartX;
-    if (Math.abs(dx) > 50) {
-      if (dx > 0) rendition.prev();
-      else rendition.next();
-    }
-  });
-});
 
 // ===== Init =====
 async function init() {
