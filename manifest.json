@@ -1,7 +1,7 @@
 {
   "name": "Ferillove · Read",
   "short_name": "Read",
-  "start_url": "/shared-reader/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#0d0d0f",
   "theme_color": "#0d0d0f",

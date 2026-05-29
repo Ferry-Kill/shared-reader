@@ -224,7 +224,7 @@ body {
   background: none;
 }
 
-#epub-container {
+#epubContainer {
   width: 100%;
   height: 100vh;
   background: var(--bg-reader);
@@ -587,7 +587,7 @@ body {
 
 <!-- Reader View -->
 <div id="readerView" class="view">
-  <div id="epubContainer" id="epub-container"></div>
+  <div id="epubContainer"></div>
 
   <div class="reader-header" id="readerHeader">
     <button class="reader-back" id="backBtn">←</button>
@@ -889,8 +889,7 @@ async function openBook(bookId) {
       width: '100%',
       height: '100%',
       spread: 'none',
-      flow: 'paginated',
-      manager: 'continuous'
+      flow: 'paginated'
     });
 
     // Apply reading styles
