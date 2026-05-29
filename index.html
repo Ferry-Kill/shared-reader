@@ -824,38 +824,15 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
       reader.readAsArrayBuffer(file);
     });
 
-    document.querySelector('.loading-text').textContent = 'Parsing epub...';
-    let title = file.name.replace(/\.epub$/i, '');
-    let coverUrl = null;
-
-    try {
-      const tempBook = ePub(arrayBuffer.slice(0));
-      await tempBook.ready;
-      const meta = tempBook.packaging.metadata;
-      if (meta.title) title = meta.title;
-
-      try {
-        coverUrl = await tempBook.coverUrl();
-        if (coverUrl) {
-          const resp = await fetch(coverUrl);
-          const blob = await resp.blob();
-          coverUrl = await blobToDataURL(blob);
-        }
-      } catch (err) {}
-
-      tempBook.destroy();
-    } catch (err) {
-      console.warn('Metadata extraction failed, using filename:', err);
-    }
-
-    document.querySelector('.loading-text').textContent = 'Saving...';
+    document.querySelector('.loading-text').textContent = 'Saving to library...';
+    const title = file.name.replace(/\.epub$/i, '');
     const id = 'book_' + Date.now();
     const bookData = {
       id,
       title,
       author: '',
       data: arrayBuffer,
-      cover: coverUrl,
+      cover: null,
       progress: 0,
       location: null,
       addedAt: Date.now()
@@ -866,7 +843,7 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
     renderShelf();
   } catch (err) {
     console.error('Import error:', err);
-    alert('Import failed: ' + err.message);
+    alert('Import failed: ' + (err.message || err));
   }
 
   showLoading(false);
@@ -886,16 +863,22 @@ async function openBook(bookId) {
   showLoading(true);
 
   try {
+    document.querySelector('.loading-text').textContent = 'Loading book...';
     const bookData = await dbGet('books', bookId);
-    if (!bookData) return;
+    if (!bookData) { showLoading(false); return; }
 
     currentBook = bookData;
     const arrayBuffer = bookData.data instanceof ArrayBuffer ? bookData.data : new Uint8Array(bookData.data).buffer;
 
     if (book) book.destroy();
 
+    document.querySelector('.loading-text').textContent = 'Parsing...';
     book = ePub(arrayBuffer);
-    await book.ready;
+
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Parsing timed out (15s)')), 15000));
+    await Promise.race([book.ready, timeout]);
+
+    document.querySelector('.loading-text').textContent = 'Rendering...';
 
     document.getElementById('shelfView').classList.remove('active');
     document.getElementById('readerView').classList.add('active');
@@ -911,7 +894,6 @@ async function openBook(bookId) {
       flow: 'paginated'
     });
 
-    // Apply reading styles
     rendition.themes.default({
       'body': {
         'background': '#1a1a1e !important',
@@ -937,7 +919,6 @@ async function openBook(bookId) {
       }
     });
 
-    // Load saved position
     if (bookData.location) {
       await rendition.display(bookData.location);
     } else {
