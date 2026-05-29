@@ -173,17 +173,9 @@ body {
   z-index: 10;
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  padding-top: calc(12px + env(safe-area-inset-top));
-  background: linear-gradient(to bottom, rgba(13,13,15,0.95), transparent);
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-
-.reader-header.show {
-  opacity: 1;
-  pointer-events: auto;
+  padding: 8px 16px;
+  padding-top: calc(8px + env(safe-area-inset-top));
+  background: rgba(13,13,15,0.9);
 }
 
 .reader-back {
@@ -228,6 +220,8 @@ body {
 #epubContainer {
   width: 100%;
   height: 100vh;
+  padding-top: 44px;
+  padding-bottom: 50px;
   background: var(--bg-reader);
 }
 
@@ -264,17 +258,9 @@ body {
   left: 0;
   right: 0;
   z-index: 10;
-  padding: 12px 20px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, rgba(13,13,15,0.95), transparent);
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-
-.reader-footer.show {
-  opacity: 1;
-  pointer-events: auto;
+  padding: 8px 20px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  background: rgba(13,13,15,0.9);
 }
 
 .chapter-title {
@@ -982,14 +968,7 @@ async function openBook(bookId) {
       }
     });
 
-    rendition.on('rendered', (section) => {
-      const doc = rendition.getContents()[0]?.document;
-      if (doc && !doc._navSetup) {
-        doc._navSetup = true;
-        setupIframeTouchNav(doc);
-        doc.addEventListener('contextmenu', (e) => e.preventDefault());
-      }
-    });
+    rendition.on('rendered', (section) => {});
 
     showLoading(false);
 
@@ -1000,48 +979,6 @@ async function openBook(bookId) {
   }
 }
 
-function setupIframeTouchNav(doc) {
-  let startX = 0, startY = 0, startTime = 0;
-  doc.addEventListener('touchstart', (e) => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    startTime = Date.now();
-  }, { passive: true });
-  doc.addEventListener('touchend', (e) => {
-    if (!rendition) return;
-    const dx = e.changedTouches[0].clientX - startX;
-    const dy = e.changedTouches[0].clientY - startY;
-    const dt = Date.now() - startTime;
-
-    // Swipe (any duration, big horizontal movement)
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx > 0) rendition.prev();
-      else rendition.next();
-      return;
-    }
-
-    // Quick tap only (< 300ms, minimal movement) = navigation
-    // But skip if tapping on a highlight annotation
-    if (dt < 300 && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-      const target = e.target;
-      const isHighlight = target.closest && target.closest('.epubjs-hl');
-      if (isHighlight) return;
-
-      const w = doc.documentElement.clientWidth;
-      const x = e.changedTouches[0].clientX;
-      if (x < w * 0.35) rendition.prev();
-      else if (x > w * 0.65) rendition.next();
-      else toggleUI();
-    }
-    // Long press (>= 300ms) = let browser handle text selection
-  });
-}
-
-function toggleUI() {
-  uiVisible = !uiVisible;
-  document.getElementById('readerHeader').classList.toggle('show', uiVisible);
-  document.getElementById('readerFooter').classList.toggle('show', uiVisible);
-}
 
 function updateProgress(location) {
   const pct = Math.round((location.start.percentage || 0) * 100);
@@ -1071,9 +1008,6 @@ function goToShelf() {
   currentBook = null;
   document.getElementById('readerView').classList.remove('active');
   document.getElementById('shelfView').classList.add('active');
-  uiVisible = false;
-  document.getElementById('readerHeader').classList.remove('show');
-  document.getElementById('readerFooter').classList.remove('show');
   hideHighlightMenu();
   renderShelf();
 }
@@ -1241,7 +1175,6 @@ function clearSelection() {
 
 // ===== Annotations Panel =====
 document.getElementById('menuBtn').onclick = () => {
-  toggleUI();
   openAnnotationsPanel();
 };
 
