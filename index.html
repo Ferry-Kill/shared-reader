@@ -225,7 +225,7 @@ body {
 
 #epubContainer {
   width: 100%;
-  height: calc(100vh - 52px);
+  height: 100vh;
   background: var(--bg-reader);
 }
 
@@ -268,6 +268,12 @@ body {
   padding: 10px 20px;
   padding-bottom: calc(10px + env(safe-area-inset-bottom));
   background: rgba(13,13,15,0.92);
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+}
+
+.bottom-bar.show {
+  transform: translateY(0);
 }
 
 .bar-btn {
@@ -712,7 +718,7 @@ body {
     <button class="bar-btn" id="brightBtn">☀</button>
     <button class="bar-btn" id="bleBtn">I</button>
     <button class="bar-btn" id="fontBtn">A</button>
-    <button class="bar-btn" id="bookmarkBtn">🔖</button>
+    <button class="bar-btn" id="lineHeightBtn">≡</button>
   </div>
 
   <div class="slider-popup" id="brightPopup">
@@ -723,6 +729,11 @@ body {
   <div class="slider-popup" id="fontPopup">
     <label>A</label>
     <input type="range" id="fontSizeSlider" min="14" max="28" value="16">
+  </div>
+
+  <div class="slider-popup" id="lineHeightPopup">
+    <label>≡</label>
+    <input type="range" id="lineHeightSlider" min="14" max="30" value="18">
   </div>
 </div>
 
@@ -1033,8 +1044,10 @@ async function openBook(bookId) {
     // Restore saved settings
     const savedBright = localStorage.getItem('reader_brightness');
     const savedFont = localStorage.getItem('reader_fontsize');
+    const savedLH = localStorage.getItem('reader_lineheight');
     if (savedBright) document.getElementById('brightnessSlider').value = savedBright;
     if (savedFont) document.getElementById('fontSizeSlider').value = savedFont;
+    if (savedLH) document.getElementById('lineHeightSlider').value = savedLH;
     applyReaderStyles();
 
     // Load and apply highlights
@@ -1119,8 +1132,10 @@ function goToShelf() {
   document.getElementById('readerView').classList.remove('active');
   document.getElementById('shelfView').classList.add('active');
   document.getElementById('readerHeader').classList.remove('show');
+  document.getElementById('bottomBar').classList.remove('show');
   document.getElementById('brightPopup').classList.remove('show');
   document.getElementById('fontPopup').classList.remove('show');
+  document.getElementById('lineHeightPopup').classList.remove('show');
   uiVisible = false;
   hideHighlightMenu();
   renderShelf();
@@ -1129,9 +1144,11 @@ function goToShelf() {
 function toggleUI() {
   uiVisible = !uiVisible;
   document.getElementById('readerHeader').classList.toggle('show', uiVisible);
+  document.getElementById('bottomBar').classList.toggle('show', uiVisible);
   if (!uiVisible) {
     document.getElementById('brightPopup').classList.remove('show');
     document.getElementById('fontPopup').classList.remove('show');
+    document.getElementById('lineHeightPopup').classList.remove('show');
   }
 }
 
@@ -1143,6 +1160,7 @@ function applyReaderStyles() {
   if (!rendition) return;
   const bright = parseInt(document.getElementById('brightnessSlider').value);
   const fontSize = document.getElementById('fontSizeSlider').value;
+  const lineHeight = (parseInt(document.getElementById('lineHeightSlider').value) / 10).toFixed(1);
 
   const r = Math.round(26 + (bright / 100) * 229);
   const g = Math.round(26 + (bright / 100) * 229);
@@ -1163,11 +1181,11 @@ function applyReaderStyles() {
       'background': bg + ' !important',
       'color': textColor + ' !important',
       'font-family': "'Noto Serif SC', 'Noto Sans SC', serif !important",
-      'line-height': '1.8 !important',
+      'line-height': lineHeight + ' !important',
       'padding': '20px 16px !important',
       'font-size': fontSize + 'px !important'
     },
-    'p': { 'color': textColor + ' !important', 'line-height': '1.8 !important', 'margin-bottom': '0.8em !important' },
+    'p': { 'color': textColor + ' !important', 'line-height': lineHeight + ' !important', 'margin-bottom': '0.8em !important' },
     'h1,h2,h3,h4,h5,h6': { 'color': textColor + ' !important' },
     'a': { 'color': '#c49a9e !important' },
     'img': { 'max-width': '100% !important' }
@@ -1176,6 +1194,7 @@ function applyReaderStyles() {
   document.getElementById('epubContainer').style.background = bg;
   localStorage.setItem('reader_brightness', bright);
   localStorage.setItem('reader_fontsize', fontSize);
+  localStorage.setItem('reader_lineheight', document.getElementById('lineHeightSlider').value);
 }
 
 document.getElementById('brightnessSlider').addEventListener('input', applyReaderStyles);
@@ -1185,10 +1204,12 @@ document.getElementById('fontSizeSlider').addEventListener('input', applyReaderS
 document.getElementById('tocBtn').onclick = () => { openTocPanel(); };
 document.getElementById('brightBtn').onclick = () => {
   document.getElementById('fontPopup').classList.remove('show');
+  document.getElementById('lineHeightPopup').classList.remove('show');
   document.getElementById('brightPopup').classList.toggle('show');
 };
 document.getElementById('fontBtn').onclick = () => {
   document.getElementById('brightPopup').classList.remove('show');
+  document.getElementById('lineHeightPopup').classList.remove('show');
   document.getElementById('fontPopup').classList.toggle('show');
 };
 document.getElementById('bleBtn').onclick = () => {
@@ -1196,16 +1217,12 @@ document.getElementById('bleBtn').onclick = () => {
   alert('I connection coming soon');
 };
 
-let bookmarks = JSON.parse(localStorage.getItem('reader_bookmarks') || '{}');
-document.getElementById('bookmarkBtn').onclick = () => {
-  if (!currentBook || !currentCfi) return;
-  const key = currentBook.id;
-  if (!bookmarks[key]) bookmarks[key] = [];
-  bookmarks[key].push({ cfi: currentCfi, time: Date.now() });
-  localStorage.setItem('reader_bookmarks', JSON.stringify(bookmarks));
-  document.getElementById('bookmarkBtn').classList.add('active');
-  setTimeout(() => document.getElementById('bookmarkBtn').classList.remove('active'), 600);
+document.getElementById('lineHeightBtn').onclick = () => {
+  document.getElementById('brightPopup').classList.remove('show');
+  document.getElementById('fontPopup').classList.remove('show');
+  document.getElementById('lineHeightPopup').classList.toggle('show');
 };
+document.getElementById('lineHeightSlider').addEventListener('input', applyReaderStyles);
 
 function openTocPanel() {
   document.getElementById('panelBackdrop').classList.add('show');
