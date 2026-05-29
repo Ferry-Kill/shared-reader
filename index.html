@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d0d0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Read">
+<link rel="manifest" href="manifest.json">
+<title>Ferillove · Read</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #0d0d0f;
+  --bg-reader: #1a1a1e;
+  --rose: #c49a9e;
+  --rose-light: #e8d4d8;
+  --rose-dim: rgba(196, 154, 158, 0.3);
+  --warm-brown: rgba(180, 130, 90, 0.35);
+  --warm-brown-solid: #b4825a;
+  --deep-gray: rgba(120, 120, 130, 0.35);
+  --deep-gray-solid: #78788c;
+  --text: #e8d4d8;
+  --text-dim: rgba(232, 212, 216, 0.5);
+}
+
+body {
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ===== Bookshelf ===== */
+.view { display: none; width: 100%; height: 100vh; }
+.view.active { display: flex; flex-direction: column; }
+
+.shelf-header {
+  padding: 50px 30px 20px;
+  text-align: center;
+}
+
+.shelf-title {
+  font-family: 'Caveat', cursive;
+  font-size: 2.4em;
+  font-weight: 500;
+  color: var(--rose-light);
+  letter-spacing: 0.05em;
+}
+
+.shelf-subtitle {
+  font-family: 'Caveat', cursive;
+  font-size: 1em;
+  color: var(--rose-dim);
+  margin-top: 5px;
+  letter-spacing: 0.1em;
+}
+
+.shelf-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 25px 100px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  align-content: start;
+}
+
+.shelf-grid::-webkit-scrollbar { width: 0; }
+
+.book-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.book-card:active { transform: scale(0.95); }
+
+.book-cover {
+  width: 100%;
+  aspect-ratio: 2/3;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(196, 154, 158, 0.15), rgba(196, 154, 158, 0.05));
+  border: 1px solid rgba(196, 154, 158, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.book-cover-text {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.85em;
+  color: var(--rose-light);
+  text-align: center;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.book-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(0,0,0,0.3);
+}
+
+.book-progress-bar {
+  height: 100%;
+  background: var(--rose);
+  transition: width 0.3s;
+}
+
+.book-name {
+  margin-top: 8px;
+  font-size: 0.75em;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.add-card .book-cover {
+  border: 2px dashed rgba(196, 154, 158, 0.2);
+  background: transparent;
+}
+
+.add-icon {
+  font-family: 'Caveat', cursive;
+  font-size: 2.5em;
+  color: var(--rose-dim);
+}
+
+#fileInput { display: none; }
+
+/* ===== Reader ===== */
+#readerView {
+  position: relative;
+  overflow: hidden;
+}
+
+.reader-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  background: linear-gradient(to bottom, rgba(13,13,15,0.95), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.reader-header.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.reader-back {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3em;
+  color: var(--rose-light);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.reader-book-title {
+  flex: 1;
+  text-align: center;
+  font-family: 'Caveat', cursive;
+  font-size: 1.1em;
+  color: var(--rose-light);
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 10px;
+}
+
+.reader-menu-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1em;
+  color: var(--rose-light);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+#epub-container {
+  width: 100%;
+  height: 100vh;
+  background: var(--bg-reader);
+}
+
+.reader-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 12px 20px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(13,13,15,0.95), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.reader-footer.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chapter-title {
+  font-size: 0.75em;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 3px;
+  background: rgba(196, 154, 158, 0.15);
+  border-radius: 2px;
+  margin-bottom: 6px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--rose);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.progress-text {
+  font-family: 'Caveat', cursive;
+  font-size: 0.85em;
+  color: var(--rose-dim);
+  text-align: center;
+}
+
+/* ===== Highlight Menu ===== */
+.highlight-menu {
+  position: fixed;
+  z-index: 100;
+  background: rgba(30, 30, 34, 0.95);
+  border: 1px solid rgba(196, 154, 158, 0.2);
+  border-radius: 20px;
+  padding: 6px 4px;
+  display: none;
+  gap: 2px;
+  backdrop-filter: blur(10px);
+}
+
+.highlight-menu.show { display: flex; }
+
+.hl-btn {
+  border: none;
+  background: none;
+  color: var(--rose-light);
+  font-family: 'Caveat', cursive;
+  font-size: 0.95em;
+  padding: 6px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.hl-btn:active { background: rgba(196, 154, 158, 0.2); }
+
+.hl-btn.delete { color: rgba(232, 212, 216, 0.4); }
+
+/* ===== Note Input ===== */
+.note-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+
+.note-overlay.show { display: flex; }
+
+.note-box {
+  width: 100%;
+  max-width: 340px;
+  background: #1e1e22;
+  border: 1px solid rgba(196, 154, 158, 0.15);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.note-label {
+  font-family: 'Caveat', cursive;
+  font-size: 1.1em;
+  color: var(--rose-light);
+  margin-bottom: 4px;
+}
+
+.note-quote {
+  font-size: 0.8em;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  line-height: 1.5;
+  max-height: 60px;
+  overflow: hidden;
+  border-left: 2px solid var(--warm-brown-solid);
+  padding-left: 10px;
+}
+
+.note-textarea {
+  width: 100%;
+  min-height: 80px;
+  background: rgba(196, 154, 158, 0.08);
+  border: 1px solid rgba(196, 154, 158, 0.15);
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--text);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.9em;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+.note-textarea:focus { border-color: var(--rose-dim); }
+
+.note-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.note-btn {
+  border: none;
+  background: none;
+  font-family: 'Caveat', cursive;
+  font-size: 1.05em;
+  padding: 6px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.note-btn.cancel { color: var(--text-dim); }
+.note-btn.save { color: var(--rose-light); background: rgba(196, 154, 158, 0.15); }
+.note-btn.save:active { background: rgba(196, 154, 158, 0.3); }
+
+/* ===== Annotations Panel ===== */
+.annotations-panel {
+  position: fixed;
+  top: 0; right: -100%; bottom: 0;
+  width: 85%;
+  max-width: 360px;
+  z-index: 150;
+  background: rgba(20, 20, 24, 0.98);
+  border-left: 1px solid rgba(196, 154, 158, 0.1);
+  transition: right 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+}
+
+.annotations-panel.show { right: 0; }
+
+.ann-header {
+  padding: 50px 20px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ann-title {
+  font-family: 'Caveat', cursive;
+  font-size: 1.5em;
+  color: var(--rose-light);
+}
+
+.ann-close {
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
+.ann-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 20px 30px;
+}
+
+.ann-list::-webkit-scrollbar { width: 3px; }
+.ann-list::-webkit-scrollbar-thumb { background: rgba(196, 154, 158, 0.15); border-radius: 3px; }
+
+.ann-item {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(196, 154, 158, 0.06);
+}
+
+.ann-quote {
+  font-size: 0.85em;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 8px;
+  padding-left: 10px;
+  border-left: 2px solid var(--warm-brown-solid);
+}
+
+.ann-note {
+  font-size: 0.85em;
+  line-height: 1.6;
+  padding-left: 10px;
+  margin-top: 6px;
+}
+
+.ann-note.ferry {
+  color: var(--warm-brown-solid);
+  border-left: 2px solid var(--warm-brown-solid);
+}
+
+.ann-note.killian {
+  color: var(--deep-gray-solid);
+  border-left: 2px solid var(--deep-gray-solid);
+}
+
+.ann-note-label {
+  font-family: 'Caveat', cursive;
+  font-size: 0.8em;
+  opacity: 0.6;
+  margin-bottom: 2px;
+}
+
+.ann-empty {
+  text-align: center;
+  color: var(--text-dim);
+  font-family: 'Caveat', cursive;
+  font-size: 1.1em;
+  margin-top: 60px;
+}
+
+/* ===== Chapter reveal ===== */
+.reveal-btn {
+  display: none;
+  margin: 15px auto;
+  border: none;
+  background: rgba(196, 154, 158, 0.12);
+  color: var(--rose-light);
+  font-family: 'Caveat', cursive;
+  font-size: 1em;
+  padding: 8px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.reveal-btn.show { display: block; }
+.reveal-btn:active { background: rgba(196, 154, 158, 0.25); }
+
+/* ===== Overlay backdrop ===== */
+.panel-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 140;
+  background: rgba(0,0,0,0.5);
+  display: none;
+}
+
+.panel-backdrop.show { display: block; }
+
+/* ===== Loading ===== */
+.loading {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 300;
+  background: var(--bg);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.loading.show { display: flex; }
+
+.loading-text {
+  font-family: 'Caveat', cursive;
+  font-size: 1.3em;
+  color: var(--rose-light);
+  animation: pulse-load 1.5s infinite;
+}
+
+@keyframes pulse-load {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ===== Context menu for book card ===== */
+.ctx-menu {
+  position: fixed;
+  z-index: 100;
+  background: rgba(30, 30, 34, 0.95);
+  border: 1px solid rgba(196, 154, 158, 0.2);
+  border-radius: 12px;
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+  min-width: 120px;
+}
+
+.ctx-menu.show { display: flex; }
+
+.ctx-item {
+  border: none;
+  background: none;
+  color: var(--rose-light);
+  font-family: 'Caveat', cursive;
+  font-size: 1em;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ctx-item:active { background: rgba(196, 154, 158, 0.15); }
+.ctx-item.danger { color: rgba(220, 100, 100, 0.8); }
+</style>
+</head>
+<body>
+
+<!-- Bookshelf View -->
+<div id="shelfView" class="view active">
+  <div class="shelf-header">
+    <div class="shelf-title">Ferillove · Read</div>
+    <div class="shelf-subtitle">our bookshelf</div>
+  </div>
+  <div class="shelf-grid" id="shelfGrid"></div>
+  <input type="file" id="fileInput" accept=".epub">
+</div>
+
+<!-- Reader View -->
+<div id="readerView" class="view">
+  <div id="epubContainer" id="epub-container"></div>
+
+  <div class="reader-header" id="readerHeader">
+    <button class="reader-back" id="backBtn">←</button>
+    <div class="reader-book-title" id="readerBookTitle"></div>
+    <button class="reader-menu-btn" id="menuBtn">☰</button>
+  </div>
+
+  <div class="reader-footer" id="readerFooter">
+    <div class="chapter-title" id="chapterTitle"></div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-text" id="progressText">0%</div>
+  </div>
+</div>
+
+<!-- Highlight menu -->
+<div class="highlight-menu" id="highlightMenu">
+  <button class="hl-btn" id="hlHighlight">Highlight</button>
+  <button class="hl-btn" id="hlNote">Note</button>
+  <button class="hl-btn delete" id="hlRemove" style="display:none">Remove</button>
+</div>
+
+<!-- Note input overlay -->
+<div class="note-overlay" id="noteOverlay">
+  <div class="note-box">
+    <div class="note-label">Your note</div>
+    <div class="note-quote" id="noteQuote"></div>
+    <textarea class="note-textarea" id="noteTextarea" placeholder="write something..."></textarea>
+    <div class="note-actions">
+      <button class="note-btn cancel" id="noteCancel">Cancel</button>
+      <button class="note-btn save" id="noteSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Annotations panel -->
+<div class="panel-backdrop" id="panelBackdrop"></div>
+<div class="annotations-panel" id="annPanel">
+  <div class="ann-header">
+    <div class="ann-title">Notes</div>
+    <button class="ann-close" id="annClose">✕</button>
+  </div>
+  <button class="reveal-btn" id="revealBtn">Reveal Killian's notes ♡</button>
+  <div class="ann-list" id="annList"></div>
+</div>
+
+<!-- Book context menu -->
+<div class="ctx-menu" id="ctxMenu">
+  <button class="ctx-item" id="ctxOpen">Open</button>
+  <button class="ctx-item danger" id="ctxDelete">Delete</button>
+</div>
+
+<!-- Loading -->
+<div class="loading" id="loading">
+  <div class="loading-text">Loading...</div>
+</div>
+
+<script>
+const DB_NAME = 'ferillove-reader';
+const DB_VERSION = 1;
+const RELAY_SERVER = 'wss://killian-i.duckdns.org:8444';
+const API_SERVER = 'https://killian-i.duckdns.org:8444';
+
+let db = null;
+let currentBook = null;
+let book = null;
+let rendition = null;
+let currentCfi = null;
+let uiVisible = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let selectedCfiRange = null;
+let selectedText = '';
+let ws = null;
+let wsReconnectTimer = null;
+let highlights = {};
+let longPressTimer = null;
+let ctxTargetId = null;
+
+// ===== IndexedDB =====
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('books')) {
+        db.createObjectStore('books', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('highlights')) {
+        db.createObjectStore('highlights', { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = (e) => reject(e);
+  });
+}
+
+function dbPut(store, data) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).put(data);
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
+}
+
+function dbGet(store, key) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = reject;
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = reject;
+  });
+}
+
+function dbDelete(store, key) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).delete(key);
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
+}
+
+// ===== Bookshelf =====
+async function renderShelf() {
+  const books = await dbGetAll('books');
+  const grid = document.getElementById('shelfGrid');
+  grid.innerHTML = '';
+
+  books.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.onclick = () => openBook(b.id);
+    card.oncontextmenu = (e) => { e.preventDefault(); showCtxMenu(e, b.id); };
+
+    let coverHTML;
+    if (b.cover) {
+      coverHTML = `<img src="${b.cover}" alt="">`;
+    } else {
+      coverHTML = `<div class="book-cover-text">${b.title}</div>`;
+    }
+
+    const progress = b.progress || 0;
+    card.innerHTML = `
+      <div class="book-cover">
+        ${coverHTML}
+        <div class="book-progress"><div class="book-progress-bar" style="width:${progress}%"></div></div>
+      </div>
+      <div class="book-name">${b.title}</div>
+    `;
+
+    let pressTimer;
+    card.addEventListener('touchstart', (e) => {
+      pressTimer = setTimeout(() => {
+        e.preventDefault();
+        showCtxMenu(e.touches[0], b.id);
+      }, 500);
+    });
+    card.addEventListener('touchend', () => clearTimeout(pressTimer));
+    card.addEventListener('touchmove', () => clearTimeout(pressTimer));
+
+    grid.appendChild(card);
+  });
+
+  // Add button
+  const addCard = document.createElement('div');
+  addCard.className = 'book-card add-card';
+  addCard.onclick = () => document.getElementById('fileInput').click();
+  addCard.innerHTML = `
+    <div class="book-cover"><div class="add-icon">+</div></div>
+    <div class="book-name">Import</div>
+  `;
+  grid.appendChild(addCard);
+}
+
+function showCtxMenu(e, bookId) {
+  ctxTargetId = bookId;
+  const menu = document.getElementById('ctxMenu');
+  const x = (e.clientX || e.pageX);
+  const y = (e.clientY || e.pageY);
+  menu.style.left = Math.min(x, window.innerWidth - 140) + 'px';
+  menu.style.top = Math.min(y, window.innerHeight - 100) + 'px';
+  menu.classList.add('show');
+}
+
+document.getElementById('ctxOpen').onclick = () => {
+  document.getElementById('ctxMenu').classList.remove('show');
+  if (ctxTargetId) openBook(ctxTargetId);
+};
+
+document.getElementById('ctxDelete').onclick = async () => {
+  document.getElementById('ctxMenu').classList.remove('show');
+  if (ctxTargetId) {
+    await dbDelete('books', ctxTargetId);
+    const allHL = await dbGetAll('highlights');
+    for (const hl of allHL) {
+      if (hl.bookId === ctxTargetId) await dbDelete('highlights', hl.id);
+    }
+    renderShelf();
+  }
+};
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.ctx-menu')) {
+    document.getElementById('ctxMenu').classList.remove('show');
+  }
+});
+
+// ===== File Import =====
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  showLoading(true);
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const tempBook = ePub(arrayBuffer);
+    await tempBook.ready;
+
+    const meta = tempBook.packaging.metadata;
+    const id = 'book_' + Date.now();
+
+    let coverUrl = null;
+    try {
+      coverUrl = await tempBook.coverUrl();
+      if (coverUrl) {
+        const resp = await fetch(coverUrl);
+        const blob = await resp.blob();
+        coverUrl = await blobToDataURL(blob);
+      }
+    } catch (err) {}
+
+    const bookData = {
+      id,
+      title: meta.title || file.name.replace('.epub', ''),
+      author: meta.creator || '',
+      data: Array.from(new Uint8Array(arrayBuffer)),
+      cover: coverUrl,
+      progress: 0,
+      location: null,
+      addedAt: Date.now()
+    };
+
+    await dbPut('books', bookData);
+    tempBook.destroy();
+    renderShelf();
+  } catch (err) {
+    console.error('Import error:', err);
+  }
+
+  showLoading(false);
+  e.target.value = '';
+});
+
+function blobToDataURL(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
+
+// ===== Reader =====
+async function openBook(bookId) {
+  showLoading(true);
+
+  try {
+    const bookData = await dbGet('books', bookId);
+    if (!bookData) return;
+
+    currentBook = bookData;
+    const arrayBuffer = new Uint8Array(bookData.data).buffer;
+
+    if (book) book.destroy();
+
+    book = ePub(arrayBuffer);
+    await book.ready;
+
+    document.getElementById('shelfView').classList.remove('active');
+    document.getElementById('readerView').classList.add('active');
+    document.getElementById('readerBookTitle').textContent = bookData.title;
+
+    const container = document.getElementById('epubContainer');
+    container.innerHTML = '';
+
+    rendition = book.renderTo(container, {
+      width: '100%',
+      height: '100%',
+      spread: 'none',
+      flow: 'paginated',
+      manager: 'continuous'
+    });
+
+    // Apply reading styles
+    rendition.themes.default({
+      'body': {
+        'background': '#1a1a1e !important',
+        'color': '#d4c8c0 !important',
+        'font-family': "'Noto Serif SC', 'Noto Sans SC', serif !important",
+        'line-height': '1.8 !important',
+        'padding': '20px 16px !important',
+        'font-size': '16px !important'
+      },
+      'p': {
+        'color': '#d4c8c0 !important',
+        'line-height': '1.8 !important',
+        'margin-bottom': '0.8em !important'
+      },
+      'h1, h2, h3, h4, h5, h6': {
+        'color': '#e8d4d8 !important'
+      },
+      'a': {
+        'color': '#c49a9e !important'
+      },
+      'img': {
+        'max-width': '100% !important'
+      }
+    });
+
+    // Load saved position
+    if (bookData.location) {
+      await rendition.display(bookData.location);
+    } else {
+      await rendition.display();
+    }
+
+    // Load and apply highlights
+    await loadHighlights(bookId);
+
+    // Events
+    rendition.on('relocated', (location) => {
+      currentCfi = location.start.cfi;
+      updateProgress(location);
+      saveProgress(location);
+    });
+
+    rendition.on('selected', (cfiRange, contents) => {
+      const range = rendition.getRange(cfiRange);
+      if (range) {
+        selectedText = range.toString().trim();
+        selectedCfiRange = cfiRange;
+        if (selectedText.length > 0) {
+          const rect = range.getBoundingClientRect();
+          const iframe = container.querySelector('iframe');
+          const iframeRect = iframe.getBoundingClientRect();
+          showHighlightMenu(
+            iframeRect.left + rect.left + rect.width / 2,
+            iframeRect.top + rect.top - 10
+          );
+        }
+      }
+    });
+
+    // Touch navigation
+    rendition.on('rendered', (section) => {
+      const doc = rendition.getContents()[0]?.document;
+      if (doc) {
+        doc.addEventListener('click', handleReaderTap);
+      }
+    });
+
+    showLoading(false);
+
+  } catch (err) {
+    console.error('Open book error:', err);
+    showLoading(false);
+    goToShelf();
+  }
+}
+
+function handleReaderTap(e) {
+  const sel = e.target.ownerDocument.getSelection();
+  if (sel && sel.toString().trim().length > 0) return;
+
+  hideHighlightMenu();
+
+  const w = window.innerWidth;
+  const x = e.clientX || (e.touches && e.touches[0].clientX) || w / 2;
+
+  if (x < w * 0.3) {
+    rendition.prev();
+  } else if (x > w * 0.7) {
+    rendition.next();
+  } else {
+    toggleUI();
+  }
+}
+
+function toggleUI() {
+  uiVisible = !uiVisible;
+  document.getElementById('readerHeader').classList.toggle('show', uiVisible);
+  document.getElementById('readerFooter').classList.toggle('show', uiVisible);
+}
+
+function updateProgress(location) {
+  const pct = Math.round((location.start.percentage || 0) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = pct + '%';
+
+  const chapter = book.navigation?.toc?.find(t => {
+    return location.start.href?.includes(t.href?.split('#')[0]);
+  });
+  document.getElementById('chapterTitle').textContent = chapter?.label || '';
+}
+
+async function saveProgress(location) {
+  if (!currentBook) return;
+  const pct = Math.round((location.start.percentage || 0) * 100);
+  currentBook.location = location.start.cfi;
+  currentBook.progress = pct;
+  await dbPut('books', currentBook);
+}
+
+function goToShelf() {
+  if (book) {
+    book.destroy();
+    book = null;
+    rendition = null;
+  }
+  currentBook = null;
+  document.getElementById('readerView').classList.remove('active');
+  document.getElementById('shelfView').classList.add('active');
+  uiVisible = false;
+  document.getElementById('readerHeader').classList.remove('show');
+  document.getElementById('readerFooter').classList.remove('show');
+  hideHighlightMenu();
+  renderShelf();
+}
+
+document.getElementById('backBtn').onclick = goToShelf;
+
+// ===== Highlights =====
+async function loadHighlights(bookId) {
+  const allHL = await dbGetAll('highlights');
+  highlights = {};
+  allHL.filter(h => h.bookId === bookId).forEach(h => {
+    highlights[h.id] = h;
+    applyHighlight(h);
+  });
+}
+
+function applyHighlight(hl) {
+  if (!rendition) return;
+  try {
+    const color = hl.owner === 'killian' ? 'rgba(120,120,130,0.35)' : 'rgba(180,130,90,0.35)';
+    rendition.annotations.highlight(hl.cfiRange, { id: hl.id }, (e) => {
+      e.preventDefault();
+      showExistingHighlightMenu(hl.id, e);
+    }, '', { fill: color, 'fill-opacity': '1', 'mix-blend-mode': 'multiply' });
+  } catch (e) {}
+}
+
+function showHighlightMenu(x, y) {
+  const menu = document.getElementById('highlightMenu');
+  document.getElementById('hlRemove').style.display = 'none';
+  document.getElementById('hlHighlight').style.display = '';
+  document.getElementById('hlNote').style.display = '';
+  menu.style.left = Math.max(10, Math.min(x - 60, window.innerWidth - 150)) + 'px';
+  menu.style.top = Math.max(10, y - 45) + 'px';
+  menu.classList.add('show');
+}
+
+function showExistingHighlightMenu(hlId, e) {
+  selectedCfiRange = highlights[hlId]?.cfiRange;
+  selectedText = highlights[hlId]?.text;
+  const menu = document.getElementById('highlightMenu');
+  document.getElementById('hlRemove').style.display = '';
+  document.getElementById('hlRemove').onclick = () => removeHighlight(hlId);
+  document.getElementById('hlHighlight').style.display = 'none';
+  document.getElementById('hlNote').style.display = '';
+
+  const x = e.clientX || e.pageX || window.innerWidth / 2;
+  const y = e.clientY || e.pageY || 200;
+  menu.style.left = Math.max(10, Math.min(x - 60, window.innerWidth - 150)) + 'px';
+  menu.style.top = Math.max(10, y - 45) + 'px';
+  menu.classList.add('show');
+
+  document.getElementById('hlNote').onclick = () => {
+    hideHighlightMenu();
+    showNoteInput(hlId);
+  };
+}
+
+function hideHighlightMenu() {
+  document.getElementById('highlightMenu').classList.remove('show');
+}
+
+document.getElementById('hlHighlight').onclick = async () => {
+  if (!selectedCfiRange || !selectedText || !currentBook) return;
+  hideHighlightMenu();
+
+  const hl = {
+    id: 'hl_' + Date.now(),
+    bookId: currentBook.id,
+    cfiRange: selectedCfiRange,
+    text: selectedText,
+    owner: 'ferry',
+    note: '',
+    createdAt: Date.now()
+  };
+
+  highlights[hl.id] = hl;
+  await dbPut('highlights', hl);
+  applyHighlight(hl);
+  clearSelection();
+
+  syncHighlight(hl);
+};
+
+document.getElementById('hlNote').onclick = () => {
+  hideHighlightMenu();
+
+  if (!selectedCfiRange || !selectedText || !currentBook) return;
+
+  // Check if highlight already exists for this range
+  const existing = Object.values(highlights).find(h => h.cfiRange === selectedCfiRange);
+  if (existing) {
+    showNoteInput(existing.id);
+  } else {
+    // Create highlight first, then open note
+    const hl = {
+      id: 'hl_' + Date.now(),
+      bookId: currentBook.id,
+      cfiRange: selectedCfiRange,
+      text: selectedText,
+      owner: 'ferry',
+      note: '',
+      createdAt: Date.now()
+    };
+    highlights[hl.id] = hl;
+    dbPut('highlights', hl);
+    applyHighlight(hl);
+    clearSelection();
+    showNoteInput(hl.id);
+  }
+};
+
+function showNoteInput(hlId) {
+  const hl = highlights[hlId];
+  if (!hl) return;
+
+  document.getElementById('noteQuote').textContent = hl.text;
+  document.getElementById('noteTextarea').value = hl.note || '';
+  document.getElementById('noteOverlay').classList.add('show');
+
+  document.getElementById('noteSave').onclick = async () => {
+    hl.note = document.getElementById('noteTextarea').value.trim();
+    highlights[hlId] = hl;
+    await dbPut('highlights', hl);
+    document.getElementById('noteOverlay').classList.remove('show');
+    syncHighlight(hl);
+  };
+
+  document.getElementById('noteCancel').onclick = () => {
+    document.getElementById('noteOverlay').classList.remove('show');
+  };
+}
+
+async function removeHighlight(hlId) {
+  hideHighlightMenu();
+  const hl = highlights[hlId];
+  if (!hl) return;
+
+  try {
+    rendition.annotations.remove(hl.cfiRange, 'highlight');
+  } catch (e) {}
+
+  delete highlights[hlId];
+  await dbDelete('highlights', hlId);
+}
+
+function clearSelection() {
+  try {
+    const contents = rendition.getContents();
+    contents.forEach(c => {
+      const sel = c.document.getSelection();
+      if (sel) sel.removeAllRanges();
+    });
+  } catch (e) {}
+  selectedCfiRange = null;
+  selectedText = '';
+}
+
+// ===== Annotations Panel =====
+document.getElementById('menuBtn').onclick = () => {
+  toggleUI();
+  openAnnotationsPanel();
+};
+
+function openAnnotationsPanel() {
+  document.getElementById('panelBackdrop').classList.add('show');
+  document.getElementById('annPanel').classList.add('show');
+  renderAnnotations();
+}
+
+function closeAnnotationsPanel() {
+  document.getElementById('panelBackdrop').classList.remove('show');
+  document.getElementById('annPanel').classList.remove('show');
+}
+
+document.getElementById('annClose').onclick = closeAnnotationsPanel;
+document.getElementById('panelBackdrop').onclick = closeAnnotationsPanel;
+
+function renderAnnotations() {
+  const list = document.getElementById('annList');
+  const hls = Object.values(highlights).sort((a, b) => a.createdAt - b.createdAt);
+
+  if (hls.length === 0) {
+    list.innerHTML = '<div class="ann-empty">No notes yet. Start reading ♡</div>';
+    document.getElementById('revealBtn').classList.remove('show');
+    return;
+  }
+
+  const hasKillianNotes = hls.some(h => h.killianNote && !h.killianRevealed);
+  document.getElementById('revealBtn').classList.toggle('show', hasKillianNotes);
+
+  list.innerHTML = '';
+  hls.forEach(hl => {
+    const item = document.createElement('div');
+    item.className = 'ann-item';
+
+    let html = `<div class="ann-quote">"${escapeHTML(hl.text)}"</div>`;
+
+    if (hl.note) {
+      html += `<div class="ann-note ferry">
+        <div class="ann-note-label">Ferry</div>
+        ${escapeHTML(hl.note)}
+      </div>`;
+    }
+
+    if (hl.killianNote && hl.killianRevealed) {
+      html += `<div class="ann-note killian">
+        <div class="ann-note-label">Killian</div>
+        ${escapeHTML(hl.killianNote)}
+      </div>`;
+    }
+
+    item.innerHTML = html;
+    item.onclick = () => {
+      closeAnnotationsPanel();
+      if (hl.cfiRange) {
+        rendition.display(hl.cfiRange);
+      }
+    };
+    list.appendChild(item);
+  });
+}
+
+document.getElementById('revealBtn').onclick = async () => {
+  const hls = Object.values(highlights);
+  for (const hl of hls) {
+    if (hl.killianNote && !hl.killianRevealed) {
+      hl.killianRevealed = true;
+      highlights[hl.id] = hl;
+      await dbPut('highlights', hl);
+    }
+  }
+  document.getElementById('revealBtn').classList.remove('show');
+  renderAnnotations();
+};
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ===== WebSocket =====
+function connectWS() {
+  if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
+  try {
+    ws = new WebSocket(RELAY_SERVER);
+    ws.onopen = () => {
+      console.log('WS connected');
+      ws.send(JSON.stringify({ type: 'hello', role: 'ferry' }));
+    };
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        handleWSMessage(msg);
+      } catch (err) {}
+    };
+    ws.onclose = () => {
+      wsReconnectTimer = setTimeout(connectWS, 5000);
+    };
+    ws.onerror = () => { ws.close(); };
+  } catch (e) {
+    wsReconnectTimer = setTimeout(connectWS, 5000);
+  }
+}
+
+function handleWSMessage(msg) {
+  if (msg.type === 'killian_annotation') {
+    const hl = highlights[msg.highlightId];
+    if (hl) {
+      hl.killianNote = msg.note;
+      hl.killianRevealed = false;
+      highlights[hl.id] = hl;
+      dbPut('highlights', hl);
+    }
+  }
+}
+
+function syncHighlight(hl) {
+  if (ws && ws.readyState === 1) {
+    ws.send(JSON.stringify({
+      type: 'highlight',
+      bookId: hl.bookId,
+      highlightId: hl.id,
+      text: hl.text,
+      note: hl.note,
+      cfiRange: hl.cfiRange,
+      timestamp: Date.now()
+    }));
+  }
+}
+
+function syncProgress() {
+  if (ws && ws.readyState === 1 && currentBook) {
+    ws.send(JSON.stringify({
+      type: 'reading_progress',
+      bookId: currentBook.id,
+      bookTitle: currentBook.title,
+      progress: currentBook.progress,
+      location: currentBook.location,
+      timestamp: Date.now()
+    }));
+  }
+}
+
+// ===== Utils =====
+function showLoading(show) {
+  document.getElementById('loading').classList.toggle('show', show);
+}
+
+// ===== Swipe on reader view =====
+document.getElementById('readerView').addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.getElementById('readerView').addEventListener('touchend', (e) => {
+  if (!rendition) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    if (dx > 0) rendition.prev();
+    else rendition.next();
+  }
+});
+
+// ===== Init =====
+async function init() {
+  await openDB();
+  renderShelf();
+  connectWS();
+
+  // Periodic progress sync
+  setInterval(() => {
+    if (currentBook && rendition) syncProgress();
+  }, 10000);
+}
+
+init();
+</script>
+</body>
+</html>
