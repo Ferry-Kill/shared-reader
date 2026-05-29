@@ -957,6 +957,7 @@ async function openBook(bookId) {
       const doc = rendition.getContents()[0]?.document;
       if (doc) {
         doc.addEventListener('click', handleReaderTap);
+        setupIframeSwipe(doc);
       }
     });
 
@@ -975,16 +976,33 @@ function handleReaderTap(e) {
 
   hideHighlightMenu();
 
-  const w = window.innerWidth;
-  const x = e.clientX || (e.touches && e.touches[0].clientX) || w / 2;
+  const doc = e.target.ownerDocument;
+  const w = doc.documentElement.clientWidth || window.innerWidth;
+  const x = e.clientX;
 
-  if (x < w * 0.3) {
+  if (x < w * 0.35) {
     rendition.prev();
-  } else if (x > w * 0.7) {
+  } else if (x > w * 0.65) {
     rendition.next();
   } else {
     toggleUI();
   }
+}
+
+function setupIframeSwipe(doc) {
+  let sx = 0, sy = 0;
+  doc.addEventListener('touchstart', (e) => {
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+  }, { passive: true });
+  doc.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx > 0) rendition.prev();
+      else rendition.next();
+    }
+  });
 }
 
 function toggleUI() {
