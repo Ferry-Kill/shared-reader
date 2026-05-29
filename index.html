@@ -953,11 +953,35 @@ async function openBook(bookId) {
       }
     });
 
-    // Touch navigation
     rendition.on('rendered', (section) => {
       const doc = rendition.getContents()[0]?.document;
       if (doc) {
         doc.addEventListener('click', handleReaderTap);
+        // Suppress native context menu so our highlight menu shows cleanly
+        doc.addEventListener('contextmenu', (e) => e.preventDefault());
+        // After text selection, wait briefly then show our menu
+        doc.addEventListener('selectionchange', () => {
+          const sel = doc.getSelection();
+          if (sel && sel.toString().trim().length > 0) {
+            clearTimeout(window._selTimer);
+            window._selTimer = setTimeout(() => {
+              const text = sel.toString().trim();
+              if (text.length > 0 && rendition) {
+                try {
+                  const range = sel.getRangeAt(0);
+                  const rect = range.getBoundingClientRect();
+                  const iframe = container.querySelector('iframe');
+                  const iframeRect = iframe.getBoundingClientRect();
+                  selectedText = text;
+                  showHighlightMenu(
+                    iframeRect.left + rect.left + rect.width / 2,
+                    iframeRect.top + rect.top - 10
+                  );
+                } catch(e) {}
+              }
+            }, 300);
+          }
+        });
       }
     });
 
