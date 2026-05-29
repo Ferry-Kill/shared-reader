@@ -815,7 +815,15 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
   showLoading(true);
 
   try {
-    const arrayBuffer = await file.arrayBuffer();
+    document.querySelector('.loading-text').textContent = 'Reading file...';
+    const arrayBuffer = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    });
+
+    document.querySelector('.loading-text').textContent = 'Parsing epub...';
     let title = file.name.replace(/\.epub$/i, '');
     let coverUrl = null;
 
@@ -839,6 +847,7 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
       console.warn('Metadata extraction failed, using filename:', err);
     }
 
+    document.querySelector('.loading-text').textContent = 'Saving...';
     const id = 'book_' + Date.now();
     const bookData = {
       id,
@@ -852,10 +861,11 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
     };
 
     await dbPut('books', bookData);
+    document.querySelector('.loading-text').textContent = 'Loading...';
     renderShelf();
   } catch (err) {
     console.error('Import error:', err);
-    alert('Failed to import: ' + err.message);
+    alert('Import failed: ' + err.message);
   }
 
   showLoading(false);
