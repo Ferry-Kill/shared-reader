@@ -810,8 +810,9 @@ document.addEventListener('click', (e) => {
 // ===== File Import =====
 document.getElementById('fileInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
-  if (!file) return;
+  if (!file) { alert('No file selected'); return; }
 
+  alert('File selected: ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + 'MB)');
   showLoading(true);
 
   try {
@@ -1391,6 +1392,9 @@ async function init() {
 
 window.onerror = (msg, src, line) => {
   alert('Error: ' + msg + ' (line ' + line + ')');
+};
+window.onunhandledrejection = (e) => {
+  alert('Promise error: ' + e.reason);
 };
 
 init();
