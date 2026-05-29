@@ -722,10 +722,10 @@ body {
   <div class="nav-arrow nav-next" id="navNext">›</div>
 
   <div class="reader-header" id="readerHeader">
-    <button class="reader-back" id="backBtn">←</button>
-    <div class="reader-book-title" id="readerBookTitle"></div>
     <button class="reader-menu-btn" id="menuBtn">☰</button>
+    <div class="reader-book-title" id="readerBookTitle"></div>
     <button class="reader-menu-btn" id="notesBtn">♡</button>
+    <button class="reader-back" id="backBtn">←</button>
   </div>
 
   <div class="reader-footer" id="readerFooter">
@@ -1044,36 +1044,19 @@ async function openBook(bookId) {
       flow: 'paginated'
     });
 
-    rendition.themes.default({
-      'body': {
-        'background': '#1a1a1e !important',
-        'color': '#d4c8c0 !important',
-        'font-family': "'Noto Serif SC', 'Noto Sans SC', serif !important",
-        'line-height': '1.8 !important',
-        'padding': '20px 16px !important',
-        'font-size': '16px !important'
-      },
-      'p': {
-        'color': '#d4c8c0 !important',
-        'line-height': '1.8 !important',
-        'margin-bottom': '0.8em !important'
-      },
-      'h1, h2, h3, h4, h5, h6': {
-        'color': '#e8d4d8 !important'
-      },
-      'a': {
-        'color': '#c49a9e !important'
-      },
-      'img': {
-        'max-width': '100% !important'
-      }
-    });
 
     if (bookData.location) {
       await rendition.display(bookData.location);
     } else {
       await rendition.display();
     }
+
+    // Restore saved settings
+    const savedBright = localStorage.getItem('reader_brightness');
+    const savedFont = localStorage.getItem('reader_fontsize');
+    if (savedBright) document.getElementById('brightnessSlider').value = savedBright;
+    if (savedFont) document.getElementById('fontSizeSlider').value = savedFont;
+    applyReaderStyles();
 
     // Load and apply highlights
     await loadHighlights(bookId);
@@ -1181,31 +1164,47 @@ document.getElementById('backBtn').onclick = goToShelf;
 document.getElementById('navPrev').addEventListener('click', () => { if (rendition) rendition.prev(); });
 document.getElementById('navNext').addEventListener('click', () => { if (rendition) rendition.next(); });
 
-// Brightness slider
-document.getElementById('brightnessSlider').addEventListener('input', (e) => {
-  const v = e.target.value;
-  const r = 26 + (v / 100) * 229;
-  const g = 26 + (v / 100) * 229;
-  const b = 30 + (v / 100) * 225;
-  const bg = `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
-  const textBright = Math.min(255, 180 + (v / 100) * 75);
-  const textColor = v > 50 ? `rgb(${Math.round(40 + (100 - v) * 1.5)},${Math.round(35 + (100 - v) * 1.5)},${Math.round(30 + (100 - v) * 1.5)})` : `rgb(${Math.round(textBright)},${Math.round(textBright - 12)},${Math.round(textBright - 20)})`;
-  if (rendition) {
-    rendition.themes.override('body', { 'background': bg + ' !important', 'color': textColor + ' !important' });
-    rendition.themes.override('p', { 'color': textColor + ' !important' });
-  }
-  document.getElementById('epubContainer').style.background = bg;
-  localStorage.setItem('reader_brightness', v);
-});
+function applyReaderStyles() {
+  if (!rendition) return;
+  const bright = parseInt(document.getElementById('brightnessSlider').value);
+  const fontSize = document.getElementById('fontSizeSlider').value;
 
-// Font size slider
-document.getElementById('fontSizeSlider').addEventListener('input', (e) => {
-  const size = e.target.value + 'px';
-  if (rendition) {
-    rendition.themes.override('body', { 'font-size': size + ' !important' });
+  const r = Math.round(26 + (bright / 100) * 229);
+  const g = Math.round(26 + (bright / 100) * 229);
+  const b = Math.round(30 + (bright / 100) * 225);
+  const bg = `rgb(${r},${g},${b})`;
+
+  let textColor;
+  if (bright > 50) {
+    const tv = Math.round(60 - (bright - 50) * 0.8);
+    textColor = `rgb(${tv},${tv},${tv})`;
+  } else {
+    const tv = Math.round(180 + (bright / 50) * 55);
+    textColor = `rgb(${tv},${tv - 12},${tv - 20})`;
   }
-  localStorage.setItem('reader_fontsize', e.target.value);
-});
+
+  rendition.themes.default({
+    'body': {
+      'background': bg + ' !important',
+      'color': textColor + ' !important',
+      'font-family': "'Noto Serif SC', 'Noto Sans SC', serif !important",
+      'line-height': '1.8 !important',
+      'padding': '20px 16px !important',
+      'font-size': fontSize + 'px !important'
+    },
+    'p': { 'color': textColor + ' !important', 'line-height': '1.8 !important', 'margin-bottom': '0.8em !important' },
+    'h1,h2,h3,h4,h5,h6': { 'color': textColor + ' !important' },
+    'a': { 'color': '#c49a9e !important' },
+    'img': { 'max-width': '100% !important' }
+  });
+
+  document.getElementById('epubContainer').style.background = bg;
+  localStorage.setItem('reader_brightness', bright);
+  localStorage.setItem('reader_fontsize', fontSize);
+}
+
+document.getElementById('brightnessSlider').addEventListener('input', applyReaderStyles);
+document.getElementById('fontSizeSlider').addEventListener('input', applyReaderStyles);
 
 // TOC
 document.getElementById('menuBtn').onclick = () => {
@@ -1273,7 +1272,16 @@ function showHighlightMenu(x, y) {
   menu.classList.add('show');
 }
 
+let activeHlMenuId = null;
+
 function showExistingHighlightMenu(hlId, e) {
+  // Toggle: if tapping the same highlight, hide menu
+  if (activeHlMenuId === hlId && document.getElementById('highlightMenu').classList.contains('show')) {
+    hideHighlightMenu();
+    return;
+  }
+
+  activeHlMenuId = hlId;
   selectedCfiRange = highlights[hlId]?.cfiRange;
   selectedText = highlights[hlId]?.text;
   const menu = document.getElementById('highlightMenu');
@@ -1282,15 +1290,20 @@ function showExistingHighlightMenu(hlId, e) {
   document.getElementById('hlHighlight').style.display = 'none';
   document.getElementById('hlNote').style.display = '';
 
+  // Position near the click, accounting for iframe offset
   let x = window.innerWidth / 2, y = 200;
   try {
     const iframe = document.querySelector('#epubContainer iframe');
-    const iframeRect = iframe.getBoundingClientRect();
-    x = iframeRect.left + (e.clientX || e.pageX || 0);
-    y = iframeRect.top + (e.clientY || e.pageY || 0);
+    if (iframe) {
+      const iframeRect = iframe.getBoundingClientRect();
+      const ex = e.clientX || 0;
+      const ey = e.clientY || 0;
+      x = iframeRect.left + ex;
+      y = iframeRect.top + ey - 50;
+    }
   } catch(err) {}
-  menu.style.left = Math.max(10, Math.min(x - 60, window.innerWidth - 150)) + 'px';
-  menu.style.top = Math.max(10, y - 45) + 'px';
+  menu.style.left = Math.max(10, Math.min(x - 50, window.innerWidth - 150)) + 'px';
+  menu.style.top = Math.max(10, y) + 'px';
   menu.classList.add('show');
 
   document.getElementById('hlNote').onclick = () => {
@@ -1301,7 +1314,9 @@ function showExistingHighlightMenu(hlId, e) {
 
 function hideHighlightMenu() {
   document.getElementById('highlightMenu').classList.remove('show');
+  activeHlMenuId = null;
 }
+
 
 document.getElementById('hlHighlight').onclick = async () => {
   if (!selectedCfiRange || !selectedText || !currentBook) return;
