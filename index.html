@@ -200,10 +200,12 @@ body {
 .reader-book-title {
   flex: 1;
   text-align: center;
-  font-family: 'Caveat', cursive;
-  font-size: 1.1em;
+  font-family: 'Caveat', 'Noto Serif SC', cursive;
+  font-size: 1em;
+  font-weight: 400;
   color: var(--rose-light);
-  opacity: 0.8;
+  opacity: 0.7;
+  letter-spacing: 0.1em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1197,8 +1199,17 @@ function applyReaderStyles() {
   localStorage.setItem('reader_lineheight', document.getElementById('lineHeightSlider').value);
 }
 
+function onStyleChange() {
+  applyReaderStyles();
+  if (currentBook) {
+    setTimeout(() => loadHighlights(currentBook.id), 300);
+  }
+}
 document.getElementById('brightnessSlider').addEventListener('input', applyReaderStyles);
 document.getElementById('fontSizeSlider').addEventListener('input', applyReaderStyles);
+document.getElementById('fontSizeSlider').addEventListener('change', onStyleChange);
+document.getElementById('lineHeightSlider').addEventListener('input', applyReaderStyles);
+document.getElementById('lineHeightSlider').addEventListener('change', onStyleChange);
 
 // Bottom bar buttons
 document.getElementById('tocBtn').onclick = () => { openTocPanel(); };
@@ -1222,7 +1233,6 @@ document.getElementById('lineHeightBtn').onclick = () => {
   document.getElementById('fontPopup').classList.remove('show');
   document.getElementById('lineHeightPopup').classList.toggle('show');
 };
-document.getElementById('lineHeightSlider').addEventListener('input', applyReaderStyles);
 
 function openTocPanel() {
   document.getElementById('panelBackdrop').classList.add('show');
@@ -1288,7 +1298,6 @@ function showHighlightMenu(x, y) {
 let activeHlMenuId = null;
 
 function showExistingHighlightMenu(hlId, e) {
-  // Toggle: if tapping the same highlight, hide menu
   if (activeHlMenuId === hlId && document.getElementById('highlightMenu').classList.contains('show')) {
     hideHighlightMenu();
     return;
@@ -1303,20 +1312,24 @@ function showExistingHighlightMenu(hlId, e) {
   document.getElementById('hlHighlight').style.display = 'none';
   document.getElementById('hlNote').style.display = '';
 
-  // Position near the click, accounting for iframe offset
   let x = window.innerWidth / 2, y = 200;
   try {
-    const iframe = document.querySelector('#epubContainer iframe');
-    if (iframe) {
-      const iframeRect = iframe.getBoundingClientRect();
-      const ex = e.clientX || 0;
-      const ey = e.clientY || 0;
-      x = iframeRect.left + ex;
-      y = iframeRect.top + ey - 50;
+    const cfi = highlights[hlId]?.cfiRange;
+    if (cfi && rendition) {
+      const range = rendition.getRange(cfi);
+      if (range) {
+        const rect = range.getBoundingClientRect();
+        const iframe = document.querySelector('#epubContainer iframe');
+        if (iframe) {
+          const ir = iframe.getBoundingClientRect();
+          x = ir.left + rect.left + rect.width / 2;
+          y = ir.top + rect.top - 10;
+        }
+      }
     }
   } catch(err) {}
   menu.style.left = Math.max(10, Math.min(x - 50, window.innerWidth - 150)) + 'px';
-  menu.style.top = Math.max(10, y) + 'px';
+  menu.style.top = Math.max(10, y - 40) + 'px';
   menu.classList.add('show');
 
   document.getElementById('hlNote').onclick = () => {
