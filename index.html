@@ -589,6 +589,9 @@ body {
 <!-- Reader View -->
 <div id="readerView" class="view">
   <div id="epubContainer"></div>
+  <div id="tapPrev" style="position:absolute;top:0;left:0;width:30%;height:100%;z-index:5;"></div>
+  <div id="tapNext" style="position:absolute;top:0;right:0;width:30%;height:100%;z-index:5;"></div>
+  <div id="tapCenter" style="position:absolute;top:0;left:30%;width:40%;height:100%;z-index:5;"></div>
 
   <div class="reader-header" id="readerHeader">
     <button class="reader-back" id="backBtn">←</button>
@@ -811,9 +814,7 @@ document.addEventListener('click', (e) => {
 // ===== File Import =====
 document.getElementById('fileInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
-  if (!file) { alert('No file selected'); return; }
-
-  alert('File selected: ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + 'MB)');
+  if (!file) return;
   showLoading(true);
 
   try {
@@ -953,13 +954,7 @@ async function openBook(bookId) {
       }
     });
 
-    rendition.on('rendered', (section) => {
-      const doc = rendition.getContents()[0]?.document;
-      if (doc) {
-        doc.addEventListener('click', handleReaderTap);
-        setupIframeSwipe(doc);
-      }
-    });
+    rendition.on('rendered', (section) => {});
 
     showLoading(false);
 
@@ -970,40 +965,9 @@ async function openBook(bookId) {
   }
 }
 
-function handleReaderTap(e) {
-  const sel = e.target.ownerDocument.getSelection();
-  if (sel && sel.toString().trim().length > 0) return;
-
-  hideHighlightMenu();
-
-  const doc = e.target.ownerDocument;
-  const w = doc.documentElement.clientWidth || window.innerWidth;
-  const x = e.clientX;
-
-  if (x < w * 0.35) {
-    rendition.prev();
-  } else if (x > w * 0.65) {
-    rendition.next();
-  } else {
-    toggleUI();
-  }
-}
-
-function setupIframeSwipe(doc) {
-  let sx = 0, sy = 0;
-  doc.addEventListener('touchstart', (e) => {
-    sx = e.touches[0].clientX;
-    sy = e.touches[0].clientY;
-  }, { passive: true });
-  doc.addEventListener('touchend', (e) => {
-    const dx = e.changedTouches[0].clientX - sx;
-    const dy = e.changedTouches[0].clientY - sy;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx > 0) rendition.prev();
-      else rendition.next();
-    }
-  });
-}
+document.getElementById('tapPrev').addEventListener('click', () => { if (rendition) rendition.prev(); });
+document.getElementById('tapNext').addEventListener('click', () => { if (rendition) rendition.next(); });
+document.getElementById('tapCenter').addEventListener('click', () => { toggleUI(); });
 
 function toggleUI() {
   uiVisible = !uiVisible;
@@ -1352,20 +1316,19 @@ function showLoading(show) {
   document.getElementById('loading').classList.toggle('show', show);
 }
 
-// ===== Swipe on reader view =====
-document.getElementById('readerView').addEventListener('touchstart', (e) => {
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-}, { passive: true });
-
-document.getElementById('readerView').addEventListener('touchend', (e) => {
-  if (!rendition) return;
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  const dy = e.changedTouches[0].clientY - touchStartY;
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-    if (dx > 0) rendition.prev();
-    else rendition.next();
-  }
+// Swipe on overlay zones
+let swipeStartX = 0;
+['tapPrev','tapNext','tapCenter'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', (e) => { swipeStartX = e.touches[0].clientX; }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (!rendition) return;
+    const dx = e.changedTouches[0].clientX - swipeStartX;
+    if (Math.abs(dx) > 50) {
+      if (dx > 0) rendition.prev();
+      else rendition.next();
+    }
+  });
 });
 
 // ===== Init =====
