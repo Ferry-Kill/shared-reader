@@ -227,7 +227,7 @@ body {
 
 #epubContainer {
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - env(safe-area-inset-bottom, 16px) - 16px);
   background: var(--bg-reader);
 }
 
@@ -1202,6 +1202,11 @@ function applyReaderStyles() {
   localStorage.setItem('reader_brightness', bright);
   localStorage.setItem('reader_fontsize', fontSize);
   localStorage.setItem('reader_lineheight', document.getElementById('lineHeightSlider').value);
+
+  // Force re-pagination after style change
+  if (rendition.manager) {
+    try { rendition.manager.resize(); } catch(e) {}
+  }
 }
 
 function onStyleChange() {
