@@ -953,7 +953,10 @@ async function openBook(bookId) {
 
     rendition.on('rendered', (section) => {
       const doc = rendition.getContents()[0]?.document;
-      if (doc) setupIframeTouchNav(doc);
+      if (doc && !doc._navSetup) {
+        doc._navSetup = true;
+        setupIframeTouchNav(doc);
+      }
     });
 
     showLoading(false);
