@@ -836,7 +836,7 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
       id,
       title: meta.title || file.name.replace('.epub', ''),
       author: meta.creator || '',
-      data: Array.from(new Uint8Array(arrayBuffer)),
+      data: arrayBuffer,
       cover: coverUrl,
       progress: 0,
       location: null,
@@ -871,7 +871,7 @@ async function openBook(bookId) {
     if (!bookData) return;
 
     currentBook = bookData;
-    const arrayBuffer = new Uint8Array(bookData.data).buffer;
+    const arrayBuffer = bookData.data instanceof ArrayBuffer ? bookData.data : new Uint8Array(bookData.data).buffer;
 
     if (book) book.destroy();
 
