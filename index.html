@@ -43,8 +43,8 @@ body {
 }
 
 /* ===== Bookshelf ===== */
-.view { display: none !important; width: 100%; height: 100vh; }
-.view.active { display: flex !important; flex-direction: column; }
+.view { display: none; width: 100%; height: 100vh; }
+.view.active { display: flex; flex-direction: column; }
 
 .shelf-header {
   padding: 50px 30px 20px;
@@ -163,8 +163,6 @@ body {
 #readerView {
   position: relative;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 .reader-header {
@@ -227,9 +225,8 @@ body {
 
 #epubContainer {
   width: 100%;
-  flex: 1;
+  height: calc(100vh - 52px);
   background: var(--bg-reader);
-  min-height: 0;
 }
 
 .nav-arrow {
@@ -260,15 +257,17 @@ body {
 .nav-next { right: 2px; }
 
 .bottom-bar {
-  width: 100%;
-  z-index: 10;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
   display: flex;
   justify-content: space-around;
   align-items: center;
   padding: 10px 20px;
   padding-bottom: calc(10px + env(safe-area-inset-bottom));
-  background: rgba(13,13,15,0.85);
-  flex-shrink: 0;
+  background: rgba(13,13,15,0.92);
 }
 
 .bar-btn {
