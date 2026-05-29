@@ -1370,15 +1370,28 @@ document.getElementById('readerView').addEventListener('touchend', (e) => {
 
 // ===== Init =====
 async function init() {
+  // Clear old service workers and caches
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const r of regs) await r.unregister();
+  }
+  if ('caches' in window) {
+    const names = await caches.keys();
+    for (const n of names) await caches.delete(n);
+  }
+
   await openDB();
   renderShelf();
   connectWS();
 
-  // Periodic progress sync
   setInterval(() => {
     if (currentBook && rendition) syncProgress();
   }, 10000);
 }
+
+window.onerror = (msg, src, line) => {
+  alert('Error: ' + msg + ' (line ' + line + ')');
+};
 
 init();
 </script>
