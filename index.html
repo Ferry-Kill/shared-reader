@@ -231,6 +231,33 @@ body {
   background: var(--bg-reader);
 }
 
+.nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 8;
+  width: 36px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8em;
+  color: rgba(196, 154, 158, 0.25);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.nav-arrow:active {
+  color: rgba(196, 154, 158, 0.6);
+  background: rgba(196, 154, 158, 0.08);
+}
+
+.nav-prev { left: 2px; }
+.nav-next { right: 2px; }
+
 .reader-footer {
   position: absolute;
   bottom: 0;
@@ -589,6 +616,9 @@ body {
 <!-- Reader View -->
 <div id="readerView" class="view">
   <div id="epubContainer"></div>
+
+  <div class="nav-arrow nav-prev" id="navPrev">‹</div>
+  <div class="nav-arrow nav-next" id="navNext">›</div>
 
   <div class="reader-header" id="readerHeader">
     <button class="reader-back" id="backBtn">←</button>
@@ -1044,6 +1074,8 @@ function goToShelf() {
 }
 
 document.getElementById('backBtn').onclick = goToShelf;
+document.getElementById('navPrev').addEventListener('click', () => { if (rendition) rendition.prev(); });
+document.getElementById('navNext').addEventListener('click', () => { if (rendition) rendition.next(); });
 
 // ===== Highlights =====
 async function loadHighlights(bookId) {
