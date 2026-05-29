@@ -1021,7 +1021,12 @@ function setupIframeTouchNav(doc) {
     }
 
     // Quick tap only (< 300ms, minimal movement) = navigation
+    // But skip if tapping on a highlight annotation
     if (dt < 300 && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+      const target = e.target;
+      const isHighlight = target.closest && target.closest('.epubjs-hl');
+      if (isHighlight) return;
+
       const w = doc.documentElement.clientWidth;
       const x = e.changedTouches[0].clientX;
       if (x < w * 0.35) rendition.prev();
@@ -1117,8 +1122,13 @@ function showExistingHighlightMenu(hlId, e) {
   document.getElementById('hlHighlight').style.display = 'none';
   document.getElementById('hlNote').style.display = '';
 
-  const x = e.clientX || e.pageX || window.innerWidth / 2;
-  const y = e.clientY || e.pageY || 200;
+  let x = window.innerWidth / 2, y = 200;
+  try {
+    const iframe = document.querySelector('#epubContainer iframe');
+    const iframeRect = iframe.getBoundingClientRect();
+    x = iframeRect.left + (e.clientX || e.pageX || 0);
+    y = iframeRect.top + (e.clientY || e.pageY || 0);
+  } catch(err) {}
   menu.style.left = Math.max(10, Math.min(x - 60, window.innerWidth - 150)) + 'px';
   menu.style.top = Math.max(10, y - 45) + 'px';
   menu.classList.add('show');
