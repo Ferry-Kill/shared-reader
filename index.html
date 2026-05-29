@@ -582,7 +582,7 @@ body {
     <div class="shelf-subtitle">our bookshelf</div>
   </div>
   <div class="shelf-grid" id="shelfGrid"></div>
-  <input type="file" id="fileInput" accept=".epub">
+  <input type="file" id="fileInput" accept=".epub,application/epub+zip,*/*">
 </div>
 
 <!-- Reader View -->
@@ -816,26 +816,34 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const tempBook = ePub(arrayBuffer);
-    await tempBook.ready;
-
-    const meta = tempBook.packaging.metadata;
-    const id = 'book_' + Date.now();
-
+    let title = file.name.replace(/\.epub$/i, '');
     let coverUrl = null;
-    try {
-      coverUrl = await tempBook.coverUrl();
-      if (coverUrl) {
-        const resp = await fetch(coverUrl);
-        const blob = await resp.blob();
-        coverUrl = await blobToDataURL(blob);
-      }
-    } catch (err) {}
 
+    try {
+      const tempBook = ePub(arrayBuffer.slice(0));
+      await tempBook.ready;
+      const meta = tempBook.packaging.metadata;
+      if (meta.title) title = meta.title;
+
+      try {
+        coverUrl = await tempBook.coverUrl();
+        if (coverUrl) {
+          const resp = await fetch(coverUrl);
+          const blob = await resp.blob();
+          coverUrl = await blobToDataURL(blob);
+        }
+      } catch (err) {}
+
+      tempBook.destroy();
+    } catch (err) {
+      console.warn('Metadata extraction failed, using filename:', err);
+    }
+
+    const id = 'book_' + Date.now();
     const bookData = {
       id,
-      title: meta.title || file.name.replace('.epub', ''),
-      author: meta.creator || '',
+      title,
+      author: '',
       data: arrayBuffer,
       cover: coverUrl,
       progress: 0,
@@ -844,10 +852,10 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
     };
 
     await dbPut('books', bookData);
-    tempBook.destroy();
     renderShelf();
   } catch (err) {
     console.error('Import error:', err);
+    alert('Failed to import: ' + err.message);
   }
 
   showLoading(false);
