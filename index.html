@@ -225,7 +225,7 @@ body {
 
 #epubContainer {
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 52px);
   background: var(--bg-reader);
 }
 
@@ -256,48 +256,59 @@ body {
 .nav-prev { left: 2px; }
 .nav-next { right: 2px; }
 
-.reader-footer {
+.bottom-bar {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 10;
-  padding: 8px 20px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
-  background: rgba(13,13,15,0.9);
-  transform: translateY(100%);
-  transition: transform 0.25s ease;
-}
-
-.reader-footer.show {
-  transform: translateY(0);
-}
-
-/* Settings controls in footer */
-.reader-settings {
   display: flex;
-  gap: 12px;
+  justify-content: space-around;
   align-items: center;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(196, 154, 158, 0.1);
+  padding: 10px 20px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  background: rgba(13,13,15,0.85);
 }
 
-.setting-group {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.bar-btn {
+  border: none;
+  background: none;
+  color: rgba(196, 154, 158, 0.5);
+  font-size: 1.2em;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: color 0.2s;
+  font-family: 'Caveat', cursive;
 }
 
-.setting-icon {
-  font-size: 0.8em;
+.bar-btn:active { color: var(--rose-light); }
+.bar-btn.active { color: var(--rose-light); }
+
+.slider-popup {
+  position: absolute;
+  bottom: 60px;
+  left: 20px;
+  right: 20px;
+  background: rgba(20, 20, 24, 0.95);
+  border: 1px solid rgba(196, 154, 158, 0.15);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  z-index: 11;
+}
+
+.slider-popup.show { display: flex; }
+
+.slider-popup label {
+  font-family: 'Caveat', cursive;
+  font-size: 0.9em;
   color: var(--rose-dim);
-  min-width: 20px;
-  text-align: center;
+  min-width: 24px;
 }
 
-.setting-slider {
+.slider-popup input[type="range"] {
   flex: 1;
   -webkit-appearance: none;
   appearance: none;
@@ -307,10 +318,10 @@ body {
   outline: none;
 }
 
-.setting-slider::-webkit-slider-thumb {
+.slider-popup input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--rose);
   cursor: pointer;
@@ -378,37 +389,6 @@ body {
 .toc-item:active { background: rgba(196, 154, 158, 0.1); }
 .toc-item.active { color: var(--rose-light); }
 
-.chapter-title {
-  font-size: 0.75em;
-  color: var(--text-dim);
-  text-align: center;
-  margin-bottom: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.progress-bar-container {
-  width: 100%;
-  height: 3px;
-  background: rgba(196, 154, 158, 0.15);
-  border-radius: 2px;
-  margin-bottom: 6px;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: var(--rose);
-  border-radius: 2px;
-  transition: width 0.3s;
-}
-
-.progress-text {
-  font-family: 'Caveat', cursive;
-  font-size: 0.85em;
-  color: var(--rose-dim);
-  text-align: center;
-}
 
 /* ===== Highlight Menu ===== */
 .highlight-menu {
@@ -722,28 +702,27 @@ body {
   <div class="nav-arrow nav-next" id="navNext">›</div>
 
   <div class="reader-header" id="readerHeader">
-    <button class="reader-menu-btn" id="menuBtn">☰</button>
+    <button class="reader-back" id="backBtn">←</button>
     <div class="reader-book-title" id="readerBookTitle"></div>
     <button class="reader-menu-btn" id="notesBtn">♡</button>
-    <button class="reader-back" id="backBtn">←</button>
   </div>
 
-  <div class="reader-footer" id="readerFooter">
-    <div class="chapter-title" id="chapterTitle"></div>
-    <div class="progress-bar-container">
-      <div class="progress-bar-fill" id="progressFill"></div>
-    </div>
-    <div class="progress-text" id="progressText">0%</div>
-    <div class="reader-settings">
-      <div class="setting-group">
-        <span class="setting-icon">☀</span>
-        <input type="range" class="setting-slider" id="brightnessSlider" min="0" max="100" value="15">
-      </div>
-      <div class="setting-group">
-        <span class="setting-icon">A</span>
-        <input type="range" class="setting-slider" id="fontSizeSlider" min="14" max="28" value="16">
-      </div>
-    </div>
+  <div class="bottom-bar" id="bottomBar">
+    <button class="bar-btn" id="tocBtn">☰</button>
+    <button class="bar-btn" id="brightBtn">☀</button>
+    <button class="bar-btn" id="bleBtn">I</button>
+    <button class="bar-btn" id="fontBtn">A</button>
+    <button class="bar-btn" id="bookmarkBtn">🔖</button>
+  </div>
+
+  <div class="slider-popup" id="brightPopup">
+    <label>☀</label>
+    <input type="range" id="brightnessSlider" min="0" max="100" value="15">
+  </div>
+
+  <div class="slider-popup" id="fontPopup">
+    <label>A</label>
+    <input type="range" id="fontSizeSlider" min="14" max="28" value="16">
   </div>
 </div>
 
@@ -1120,14 +1099,6 @@ async function openBook(bookId) {
 
 
 function updateProgress(location) {
-  const pct = Math.round((location.start.percentage || 0) * 100);
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressText').textContent = pct + '%';
-
-  const chapter = book.navigation?.toc?.find(t => {
-    return location.start.href?.includes(t.href?.split('#')[0]);
-  });
-  document.getElementById('chapterTitle').textContent = chapter?.label || '';
 }
 
 async function saveProgress(location) {
@@ -1148,7 +1119,8 @@ function goToShelf() {
   document.getElementById('readerView').classList.remove('active');
   document.getElementById('shelfView').classList.add('active');
   document.getElementById('readerHeader').classList.remove('show');
-  document.getElementById('readerFooter').classList.remove('show');
+  document.getElementById('brightPopup').classList.remove('show');
+  document.getElementById('fontPopup').classList.remove('show');
   uiVisible = false;
   hideHighlightMenu();
   renderShelf();
@@ -1157,7 +1129,10 @@ function goToShelf() {
 function toggleUI() {
   uiVisible = !uiVisible;
   document.getElementById('readerHeader').classList.toggle('show', uiVisible);
-  document.getElementById('readerFooter').classList.toggle('show', uiVisible);
+  if (!uiVisible) {
+    document.getElementById('brightPopup').classList.remove('show');
+    document.getElementById('fontPopup').classList.remove('show');
+  }
 }
 
 document.getElementById('backBtn').onclick = goToShelf;
@@ -1206,9 +1181,30 @@ function applyReaderStyles() {
 document.getElementById('brightnessSlider').addEventListener('input', applyReaderStyles);
 document.getElementById('fontSizeSlider').addEventListener('input', applyReaderStyles);
 
-// TOC
-document.getElementById('menuBtn').onclick = () => {
-  openTocPanel();
+// Bottom bar buttons
+document.getElementById('tocBtn').onclick = () => { openTocPanel(); };
+document.getElementById('brightBtn').onclick = () => {
+  document.getElementById('fontPopup').classList.remove('show');
+  document.getElementById('brightPopup').classList.toggle('show');
+};
+document.getElementById('fontBtn').onclick = () => {
+  document.getElementById('brightPopup').classList.remove('show');
+  document.getElementById('fontPopup').classList.toggle('show');
+};
+document.getElementById('bleBtn').onclick = () => {
+  // BLE I connection - placeholder for now
+  alert('I connection coming soon');
+};
+
+let bookmarks = JSON.parse(localStorage.getItem('reader_bookmarks') || '{}');
+document.getElementById('bookmarkBtn').onclick = () => {
+  if (!currentBook || !currentCfi) return;
+  const key = currentBook.id;
+  if (!bookmarks[key]) bookmarks[key] = [];
+  bookmarks[key].push({ cfi: currentCfi, time: Date.now() });
+  localStorage.setItem('reader_bookmarks', JSON.stringify(bookmarks));
+  document.getElementById('bookmarkBtn').classList.add('active');
+  setTimeout(() => document.getElementById('bookmarkBtn').classList.remove('active'), 600);
 };
 
 function openTocPanel() {
