@@ -1869,18 +1869,31 @@ function getCurrentChapter() {
   if (!book || !book.navigation || !rendition || !rendition.location) return null;
   const loc = rendition.location;
   if (!loc.start) return null;
-  const href = loc.start.href;
-  const toc = book.navigation.toc;
+  const locHref = loc.start.href.split('#')[0];
+  const startIdx = loc.start.index;
+
+  // Flatten TOC (handles both flat and nested structures)
+  function flattenToc(items) {
+    let result = [];
+    for (const ch of items) {
+      result.push(ch);
+      if (ch.subitems && ch.subitems.length) result = result.concat(flattenToc(ch.subitems));
+    }
+    return result;
+  }
+  const toc = flattenToc(book.navigation.toc);
+
+  // Try direct href match first
   let current = null;
   for (const ch of toc) {
     const chHref = ch.href.split('#')[0];
-    const locHref = href.split('#')[0];
-    if (chHref === locHref || locHref.endsWith(chHref)) {
+    if (chHref === locHref || locHref.endsWith(chHref) || chHref.endsWith(locHref)) {
       current = ch.label.trim();
     }
   }
+
+  // Fallback: find closest preceding chapter by spine index
   if (!current) {
-    const startIdx = loc.start.index;
     let best = null;
     for (const ch of toc) {
       try {
@@ -1891,6 +1904,49 @@ function getCurrentChapter() {
     current = best;
   }
   return current;
+}
+
+function getChapterProgress() {
+  if (!book || !book.locations || !rendition || !rendition.location) return null;
+  const loc = rendition.location;
+  if (!loc.start) return null;
+
+  function flattenToc(items) {
+    let result = [];
+    for (const ch of items) {
+      result.push(ch);
+      if (ch.subitems && ch.subitems.length) result = result.concat(flattenToc(ch.subitems));
+    }
+    return result;
+  }
+  const toc = flattenToc(book.navigation.toc);
+
+  // Find current and next chapter spine indices
+  const startIdx = loc.start.index;
+  let currentChIdx = -1;
+  let nextChIdx = -1;
+
+  for (let i = 0; i < toc.length; i++) {
+    try {
+      const item = book.spine.get(toc[i].href);
+      if (item && item.index <= startIdx) {
+        currentChIdx = item.index;
+        // Find next chapter's index
+        for (let j = i + 1; j < toc.length; j++) {
+          const nextItem = book.spine.get(toc[j].href);
+          if (nextItem) { nextChIdx = nextItem.index; break; }
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (currentChIdx === -1) return null;
+  if (nextChIdx === -1) nextChIdx = book.spine.length;
+
+  const chapterSpan = nextChIdx - currentChIdx;
+  if (chapterSpan <= 0) return null;
+  const posInChapter = startIdx - currentChIdx;
+  return Math.min(100, Math.max(0, Math.round((posInChapter / chapterSpan) * 100)));
 }
 
 function syncProgress() {
@@ -1905,7 +1961,7 @@ function syncProgress() {
       progress: currentBook.progress,
       location: currentBook.location,
       chapter: chapter,
-      chapterProgress: null,
+      chapterProgress: getChapterProgress(),
       readingTime: { todayMs, totalMs },
       timestamp: Date.now()
     }));
