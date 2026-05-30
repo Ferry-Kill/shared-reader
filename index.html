@@ -332,25 +332,42 @@ body {
 
 .stats-content {
   width: 100%;
-  font-family: 'Caveat', cursive;
-  font-size: 0.95em;
-  color: var(--rose-light);
-  line-height: 1.7;
-}
-
-.stats-line {
   display: flex;
-  justify-content: space-between;
-  color: var(--text-dim);
-  font-size: 0.85em;
+  justify-content: space-around;
+  text-align: center;
+  padding: 4px 0;
 }
 
-.stats-line .stats-val {
+.stats-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.stats-num {
+  font-family: 'Caveat', cursive;
+  font-size: 1.4em;
+  font-weight: 600;
   color: var(--rose-light);
+  line-height: 1;
+}
+
+.stats-unit {
+  font-size: 0.7em;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.stats-label {
+  font-size: 0.7em;
+  color: var(--text-dim);
+  line-height: 1.2;
 }
 
 #statsBtn {
-  font-size: 1.6em;
+  font-size: 1.9em;
   line-height: 1;
 }
 
@@ -1766,9 +1783,18 @@ function updateStats() {
   }
 
   document.getElementById('statsContent').innerHTML = `
-    <div class="stats-line"><span>已读</span><span class="stats-val">${progress}% ${estTime ? '· ' + estTime : ''}</span></div>
-    <div class="stats-line"><span>阅读</span><span class="stats-val">今日${formatTime(todayMs)} · 累计${formatTime(totalMs)}</span></div>
-    <div class="stats-line"><span>划线</span><span class="stats-val">今日${todayHL}条 · 累计${totalHL}条</span></div>
+    <div class="stats-col">
+      <div class="stats-num">${progress}<span class="stats-unit">%</span></div>
+      <div class="stats-label">${estTime || '已读'}</div>
+    </div>
+    <div class="stats-col">
+      <div class="stats-num">${formatTime(totalMs)}</div>
+      <div class="stats-label">今日${formatTime(todayMs)}</div>
+    </div>
+    <div class="stats-col">
+      <div class="stats-num">${totalHL}<span class="stats-unit">条</span></div>
+      <div class="stats-label">今日${todayHL}条</div>
+    </div>
   `;
 }
 
