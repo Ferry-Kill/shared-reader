@@ -1959,9 +1959,15 @@ function updateStats() {
 }
 
 function updateNotesCount() {
-  const count = Object.keys(highlights).length;
+  const allHL = Object.values(highlights);
+  const total = allHL.length;
+  const today = new Date();
+  const todayCount = allHL.filter(h => {
+    const d = new Date(h.createdAt);
+    return d.toDateString() === today.toDateString();
+  }).length;
   const titleEl = document.getElementById('annTitle');
-  if (titleEl) titleEl.textContent = count > 0 ? `Notes(${count}条)` : 'Notes';
+  if (titleEl) titleEl.textContent = total > 0 ? `Notes(${todayCount}/${total})` : 'Notes';
 }
 
 // ===== Export =====
