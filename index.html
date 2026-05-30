@@ -53,23 +53,32 @@ body {
   position: relative;
 }
 
-.shelf-moon {
+.moon {
   position: absolute;
-  top: 12px;
-  right: 28px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background:
-    radial-gradient(ellipse 45% 40% at 30% 28%, rgba(160,160,145,0.35) 0%, transparent 100%),
-    radial-gradient(ellipse 35% 30% at 55% 50%, rgba(155,155,140,0.3) 0%, transparent 100%),
-    radial-gradient(ellipse 25% 35% at 68% 28%, rgba(165,165,150,0.25) 0%, transparent 100%),
-    radial-gradient(ellipse 30% 25% at 38% 65%, rgba(160,160,145,0.2) 0%, transparent 100%),
-    radial-gradient(ellipse 20% 20% at 22% 48%, rgba(155,155,140,0.18) 0%, transparent 100%),
-    radial-gradient(ellipse 15% 12% at 50% 72%, rgba(150,150,135,0.15) 0%, transparent 100%),
-    radial-gradient(circle at 42% 42%, rgba(255,255,245,0.97) 0%, rgba(252,252,240,0.92) 25%, rgba(245,245,232,0.7) 50%, rgba(238,238,225,0.3) 70%, transparent 80%);
-  box-shadow: 0 0 25px 8px rgba(255,255,240,0.15), 0 0 50px 20px rgba(255,255,235,0.06);
+  top: -30px;
+  right: -30px;
+  width: 130px;
+  height: 130px;
+  pointer-events: none;
+  z-index: 5;
+  filter: drop-shadow(0 0 20px rgba(255,255,240,0.2)) drop-shadow(0 0 50px rgba(255,255,235,0.08));
 }
+
+.moon svg { width: 100%; height: 100%; }
+
+.reader-moon {
+  position: absolute;
+  top: -25px;
+  right: -25px;
+  width: 120px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.35;
+  filter: drop-shadow(0 0 15px rgba(255,255,240,0.15));
+}
+
+.reader-moon svg { width: 100%; height: 100%; }
 
 .shelf-title {
   font-family: 'Caveat', cursive;
@@ -777,7 +786,7 @@ body {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   z-index: 300;
-  background: var(--bg);
+  background: linear-gradient(180deg, #c8d8c4 0%, #7a9a70 45%, #2a4030 100%);
   display: none;
   align-items: center;
   justify-content: center;
@@ -833,10 +842,25 @@ body {
 </head>
 <body>
 
+<!-- Moon texture filter -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="moonTex" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.18 0.14" numOctaves="4" seed="5" result="noise"/>
+      <feComponentTransfer in="noise" result="soft">
+        <feFuncR type="linear" slope="0.09" intercept="0.91"/>
+        <feFuncG type="linear" slope="0.09" intercept="0.91"/>
+        <feFuncB type="linear" slope="0.07" intercept="0.93"/>
+      </feComponentTransfer>
+      <feComposite operator="in" in="soft" in2="SourceGraphic"/>
+    </filter>
+  </defs>
+</svg>
+
 <!-- Bookshelf View -->
 <div id="shelfView" class="view active">
   <div class="shelf-header">
-    <div class="shelf-moon"></div>
+    <div class="moon"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#f5f5ec" filter="url(#moonTex)"/></svg></div>
     <div class="shelf-title">Ferillove · Bookshelf</div>
     <div class="shelf-status">
       <span class="status-dot" id="ferryDot"></span><span class="status-name">Ferry</span>
@@ -850,6 +874,7 @@ body {
 
 <!-- Reader View -->
 <div id="readerView" class="view">
+  <div class="reader-moon"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#f5f5ec" filter="url(#moonTex)"/></svg></div>
   <div id="epubContainer"></div>
 
   <div class="nav-arrow nav-prev" id="navPrev">‹</div>
@@ -942,6 +967,7 @@ body {
 
 <!-- Loading -->
 <div class="loading" id="loading">
+  <div class="moon" style="top:-30px;right:-30px;position:fixed;z-index:301"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#f5f5ec" filter="url(#moonTex)"/></svg></div>
   <div class="loading-text">Loading...</div>
 </div>
 
@@ -1361,10 +1387,10 @@ function applyReaderStyles() {
   const fontSize = document.getElementById('fontSizeSlider').value;
   const lineHeight = (parseInt(document.getElementById('lineHeightSlider').value) / 10).toFixed(1);
 
-  const r = Math.round(30 + (bright / 100) * 178);
-  const g = Math.round(46 + (bright / 100) * 178);
-  const b = Math.round(34 + (bright / 100) * 166);
-  const bg = `rgb(${r},${g},${b})`;
+  const f = bright / 100;
+  const rt = Math.round(40 + f * 160), gt = Math.round(60 + f * 156), bt = Math.round(44 + f * 152);
+  const rb = Math.round(20 + f * 102), gb = Math.round(38 + f * 116), bb = Math.round(26 + f * 86);
+  const bg = `linear-gradient(180deg, rgb(${rt},${gt},${bt}) 0%, rgb(${rb},${gb},${bb}) 100%)`;
 
   let textColor;
   if (bright > 50) {
