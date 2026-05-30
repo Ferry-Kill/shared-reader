@@ -1163,6 +1163,7 @@ async function openBook(bookId) {
       updateProgress(location);
       saveProgress(location);
       hideHighlightMenu();
+      resetIdleTimer();
     });
 
     rendition.on('selected', (cfiRange, contents) => {
@@ -1736,14 +1737,36 @@ function syncProgress() {
 // ===== Stats =====
 let sessionStartTime = null;
 let sessionReadingMs = 0;
+let idleTimer = null;
+let isIdle = false;
+let idleSince = null;
 
 function startReadingTimer() {
   sessionStartTime = Date.now();
+  sessionReadingMs = 0;
+  isIdle = false;
+  resetIdleTimer();
+}
+
+function resetIdleTimer() {
+  if (idleTimer) clearTimeout(idleTimer);
+  if (isIdle) {
+    isIdle = false;
+    sessionStartTime = Date.now();
+  }
+  idleTimer = setTimeout(() => {
+    if (sessionStartTime) {
+      sessionReadingMs += Date.now() - sessionStartTime;
+      sessionStartTime = null;
+      isIdle = true;
+    }
+  }, 180000);
 }
 
 function getSessionMs() {
-  if (!sessionStartTime) return 0;
-  return Date.now() - sessionStartTime;
+  if (isIdle) return sessionReadingMs;
+  if (!sessionStartTime) return sessionReadingMs;
+  return sessionReadingMs + (Date.now() - sessionStartTime);
 }
 
 function getTodayKey() {
@@ -1752,15 +1775,16 @@ function getTodayKey() {
 }
 
 function saveTodayReading() {
-  if (!sessionStartTime) return;
+  const elapsed = getSessionMs();
+  if (elapsed <= 0) return;
   const key = getTodayKey();
   const prev = parseInt(localStorage.getItem(key) || '0');
-  const elapsed = getSessionMs();
   localStorage.setItem(key, prev + elapsed);
   const totalKey = 'reading_total';
   const prevTotal = parseInt(localStorage.getItem(totalKey) || '0');
   localStorage.setItem(totalKey, prevTotal + elapsed);
-  sessionStartTime = Date.now();
+  sessionReadingMs = 0;
+  if (!isIdle) sessionStartTime = Date.now();
 }
 
 function formatTime(ms) {
