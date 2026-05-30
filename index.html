@@ -1308,6 +1308,9 @@ async function openBook(bookId) {
       const doc = rendition.getContents()[0]?.document;
       if (doc && !doc._setup) {
         doc._setup = true;
+        const forceStyle = doc.createElement('style');
+        forceStyle.textContent = "* { font-family: 'Noto Serif SC', 'Noto Sans SC', serif !important; }";
+        doc.head.appendChild(forceStyle);
         doc.addEventListener('contextmenu', (e) => e.preventDefault());
         let tapStart = 0, tapX = 0, tapY = 0;
         doc.addEventListener('touchstart', (e) => {
