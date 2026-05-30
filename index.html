@@ -350,7 +350,8 @@ body {
 }
 
 #statsBtn {
-  font-size: 1.5em;
+  font-size: 1.6em;
+  line-height: 1;
 }
 
 .slider-popup label {
@@ -1272,8 +1273,9 @@ function applyReaderStyles() {
       'color': textColor + ' !important',
       'font-family': "'Noto Serif SC', 'Noto Sans SC', serif !important",
       'line-height': lineHeight + ' !important',
-      'padding': '20px 16px !important',
-      'font-size': fontSize + 'px !important'
+      'padding': '30px 20px !important',
+      'font-size': fontSize + 'px !important',
+      'margin': '0 !important'
     },
     'p': { 'color': textColor + ' !important', 'line-height': lineHeight + ' !important', 'margin-bottom': '0.8em !important' },
     'h1,h2,h3,h4,h5,h6': { 'color': textColor + ' !important' },
@@ -1295,13 +1297,16 @@ function applyReaderStyles() {
 function onStyleChange() {
   const savedCfi = currentCfi;
   applyReaderStyles();
-  if (currentBook) {
-    setTimeout(() => {
-      loadHighlights(currentBook.id);
-      if (savedCfi && rendition) {
-        rendition.display(savedCfi);
+  if (currentBook && rendition) {
+    setTimeout(async () => {
+      if (rendition.manager) {
+        try { rendition.manager.resize(); } catch(e) {}
       }
-    }, 400);
+      await loadHighlights(currentBook.id);
+      if (savedCfi) {
+        try { await rendition.display(savedCfi); } catch(e) {}
+      }
+    }, 300);
   }
 }
 document.getElementById('brightnessSlider').addEventListener('input', applyReaderStyles);
