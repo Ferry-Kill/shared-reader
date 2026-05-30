@@ -1816,6 +1816,8 @@ function connectWS() {
       ws.send(JSON.stringify({ type: 'hello', role: 'ferry' }));
       const ferryDot = document.getElementById('ferryDot');
       if (ferryDot) ferryDot.classList.add('online');
+      const killianDot = document.getElementById('killianDot');
+      if (killianDot) killianDot.classList.add('online');
     };
     ws.onmessage = (e) => {
       try {
@@ -1826,6 +1828,8 @@ function connectWS() {
     ws.onclose = () => {
       const ferryDot = document.getElementById('ferryDot');
       if (ferryDot) ferryDot.classList.remove('online');
+      const killianDot = document.getElementById('killianDot');
+      if (killianDot) killianDot.classList.remove('online');
       wsReconnectTimer = setTimeout(connectWS, 5000);
     };
     ws.onerror = () => { ws.close(); };
