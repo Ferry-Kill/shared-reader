@@ -1279,6 +1279,7 @@ async function openBook(bookId) {
 
     // Load and apply highlights
     await loadHighlights(bookId);
+    await fetchKillianAnnotations(bookId);
     updateNotesCount();
     startReadingTimer();
 
@@ -1848,6 +1849,27 @@ function handleWSMessage(msg) {
       dbPut('highlights', hl);
     }
   }
+}
+
+async function fetchKillianAnnotations(bookId) {
+  try {
+    const resp = await fetch(API_SERVER + '/api/annotations', {
+      headers: { 'Authorization': 'Bearer killian-reader-2026' }
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const bookAnnotations = data.annotations?.[bookId];
+    if (!bookAnnotations) return;
+    for (const [hlId, ann] of Object.entries(bookAnnotations)) {
+      const hl = highlights[hlId];
+      if (hl && !hl.killianNote) {
+        hl.killianNote = ann.note;
+        hl.killianRevealed = false;
+        highlights[hl.id] = hl;
+        await dbPut('highlights', hl);
+      }
+    }
+  } catch (e) {}
 }
 
 function syncHighlight(hl) {
