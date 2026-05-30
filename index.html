@@ -1866,20 +1866,29 @@ function syncHighlight(hl) {
 }
 
 function getCurrentChapter() {
-  if (!book || !book.navigation) return null;
-  const loc = currentCfi;
-  if (!loc) return null;
+  if (!book || !book.navigation || !rendition || !rendition.location) return null;
+  const loc = rendition.location;
+  if (!loc.start) return null;
+  const href = loc.start.href;
   const toc = book.navigation.toc;
-  let current = toc[0]?.label || null;
+  let current = null;
   for (const ch of toc) {
-    try {
-      const spineItem = book.spine.get(ch.href);
-      if (spineItem && rendition.location && rendition.location.start) {
-        const idx = book.spine.items.indexOf(spineItem);
-        const curIdx = rendition.location.start.index;
-        if (idx <= curIdx) current = ch.label;
-      }
-    } catch(e) {}
+    const chHref = ch.href.split('#')[0];
+    const locHref = href.split('#')[0];
+    if (chHref === locHref || locHref.endsWith(chHref)) {
+      current = ch.label.trim();
+    }
+  }
+  if (!current) {
+    const startIdx = loc.start.index;
+    let best = null;
+    for (const ch of toc) {
+      try {
+        const item = book.spine.get(ch.href);
+        if (item && item.index <= startIdx) best = ch.label.trim();
+      } catch(e) {}
+    }
+    current = best;
   }
   return current;
 }
