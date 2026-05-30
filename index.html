@@ -470,8 +470,10 @@ body {
   width: 80%;
   max-width: 320px;
   z-index: 150;
-  background: rgba(22, 44, 28, 0.98);
-  border-right: 1px solid rgba(200, 216, 196, 0.1);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(200, 216, 196, 0.98) 0%, rgba(180, 200, 175, 0.98) 100%);
+  border-right: 1px solid rgba(120, 154, 112, 0.2);
   transition: left 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -490,13 +492,13 @@ body {
 .toc-title {
   font-family: 'Caveat', cursive;
   font-size: 1.5em;
-  color: var(--rose-light);
+  color: #2a4030;
 }
 
 .toc-close {
   border: none;
   background: none;
-  color: var(--text-dim);
+  color: rgba(42, 64, 48, 0.5);
   font-size: 1.2em;
   cursor: pointer;
 }
@@ -508,12 +510,12 @@ body {
 }
 
 .toc-list::-webkit-scrollbar { width: 3px; }
-.toc-list::-webkit-scrollbar-thumb { background: rgba(196, 154, 158, 0.15); border-radius: 3px; }
+.toc-list::-webkit-scrollbar-thumb { background: rgba(42, 64, 48, 0.15); border-radius: 3px; }
 
 .toc-item {
   padding: 10px 20px;
   font-size: 0.9em;
-  color: var(--text-dim);
+  color: rgba(42, 64, 48, 0.7);
   cursor: pointer;
   transition: background 0.2s;
   border: none;
@@ -522,8 +524,8 @@ body {
   text-align: left;
 }
 
-.toc-item:active { background: rgba(196, 154, 158, 0.1); }
-.toc-item.active { color: var(--rose-light); }
+.toc-item:active { background: rgba(42, 64, 48, 0.1); }
+.toc-item.active { color: #2a4030; }
 
 
 /* ===== Highlight Menu ===== */
