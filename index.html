@@ -1283,7 +1283,7 @@ async function openBook(bookId) {
 
     // Load and apply highlights
     await loadHighlights(bookId);
-    await fetchKillianAnnotations(bookId);
+    fetchKillianAnnotations(bookId).catch(() => {});
     updateNotesCount();
     startReadingTimer();
 
