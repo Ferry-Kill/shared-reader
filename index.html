@@ -1414,20 +1414,23 @@ function applyReaderStyles() {
     textColor = `rgb(${tv},${tv - 8},${tv - 15})`;
   }
 
+  const fontCSS = "'Noto Serif SC', 'Noto Sans SC', serif !important";
   rendition.themes.default({
     'body': {
       'background': bg + ' !important',
       'color': textColor + ' !important',
-      'font-family': "'Noto Serif SC', 'Noto Sans SC', serif !important",
+      'font-family': fontCSS,
       'line-height': lineHeight + ' !important',
       'padding': '30px 20px !important',
       'font-size': fontSize + 'px !important',
       'margin': '0 !important'
     },
-    'p': { 'color': textColor + ' !important', 'line-height': lineHeight + ' !important', 'margin-bottom': '0.8em !important' },
-    'h1,h2,h3,h4,h5,h6': { 'color': textColor + ' !important' },
+    'p, span, div, li, td, th, blockquote, cite, em, strong, b, i': { 'font-family': fontCSS, 'color': textColor + ' !important', 'line-height': lineHeight + ' !important' },
+    'p': { 'margin-bottom': '0.8em !important' },
+    'h1,h2,h3,h4,h5,h6': { 'color': textColor + ' !important', 'font-family': fontCSS },
     'a': { 'color': '#c49a9e !important' },
-    'img': { 'max-width': '100% !important' }
+    'img': { 'max-width': '100% !important' },
+    '@font-face': { 'font-family': '"override"' }
   });
 
   document.getElementById('epubContainer').style.background = bg;
