@@ -34,8 +34,8 @@
 
 body {
   font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
-  background: linear-gradient(180deg, #6b5040 0%, #3d2e22 100%);
-  background-color: var(--bg);
+  background: linear-gradient(180deg, #f0d8d0 0%, #d4a8a0 40%, #8a6068 100%);
+  background-color: #d4a8a0;
   color: var(--text);
   min-height: 100vh;
   overflow: hidden;
@@ -50,14 +50,27 @@ body {
 .shelf-header {
   padding: 50px 30px 20px;
   text-align: center;
+  position: relative;
+}
+
+.shelf-moon {
+  position: absolute;
+  top: 15px;
+  right: 30px;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,240,0.95) 0%, rgba(255,255,240,0.6) 50%, rgba(255,255,240,0) 70%);
+  box-shadow: 0 0 30px 10px rgba(255,255,240,0.15);
 }
 
 .shelf-title {
   font-family: 'Caveat', cursive;
   font-size: 2.4em;
   font-weight: 500;
-  color: var(--rose-light);
+  color: #fff;
   letter-spacing: 0.05em;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.15);
 }
 
 .shelf-status {
@@ -72,19 +85,19 @@ body {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: rgba(196, 154, 158, 0.3);
+  background: rgba(255,255,255,0.4);
   display: inline-block;
 }
 
 .status-dot.online {
-  background: var(--rose);
-  box-shadow: 0 0 6px var(--rose);
+  background: #fff;
+  box-shadow: 0 0 8px rgba(255,255,255,0.6);
 }
 
 .status-name {
   font-family: 'Caveat', cursive;
   font-size: 1.15em;
-  color: var(--text-dim);
+  color: rgba(255,255,255,0.7);
   margin-right: 24px;
 }
 
@@ -95,8 +108,7 @@ body {
 .shelf-count {
   font-family: 'Caveat', cursive;
   font-size: 0.9em;
-  color: var(--text-dim);
-  opacity: 0.5;
+  color: rgba(255,255,255,0.5);
   padding: 15px 25px 0;
   text-align: left;
 }
@@ -171,7 +183,7 @@ body {
 .book-name {
   margin-top: 8px;
   font-size: 0.75em;
-  color: var(--text-dim);
+  color: rgba(255,255,255,0.7);
   text-align: center;
   line-height: 1.3;
   display: -webkit-box;
@@ -181,14 +193,14 @@ body {
 }
 
 .add-card .book-cover {
-  border: 2px dashed rgba(196, 154, 158, 0.2);
+  border: 2px dashed rgba(255,255,255,0.3);
   background: transparent;
 }
 
 .add-icon {
   font-family: 'Caveat', cursive;
   font-size: 2.5em;
-  color: var(--rose-dim);
+  color: rgba(255,255,255,0.4);
 }
 
 #fileInput { display: none; }
@@ -817,6 +829,7 @@ body {
 <!-- Bookshelf View -->
 <div id="shelfView" class="view active">
   <div class="shelf-header">
+    <div class="shelf-moon"></div>
     <div class="shelf-title">Ferillove · Bookshelf</div>
     <div class="shelf-status">
       <span class="status-dot" id="ferryDot"></span><span class="status-name">Ferry</span>
