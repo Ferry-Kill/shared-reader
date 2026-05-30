@@ -20,7 +20,7 @@
 
 :root {
   --bg: #54402f;
-  --bg-reader: #2e2520;
+  --bg-reader: #1e2e22;
   --rose: #c49a9e;
   --rose-light: #e8d4d8;
   --rose-dim: rgba(196, 154, 158, 0.3);
@@ -61,13 +61,14 @@ body {
   height: 60px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 35% 30%, rgba(200,200,180,0.3) 0%, transparent 8%),
-    radial-gradient(circle at 55% 55%, rgba(200,200,180,0.25) 0%, transparent 6%),
-    radial-gradient(circle at 70% 35%, rgba(200,200,180,0.2) 0%, transparent 10%),
-    radial-gradient(circle at 25% 60%, rgba(200,200,180,0.15) 0%, transparent 7%),
-    radial-gradient(circle at 45% 75%, rgba(200,200,180,0.2) 0%, transparent 5%),
-    radial-gradient(circle at 40% 40%, rgba(255,255,230,0.95) 0%, rgba(255,255,220,0.85) 35%, rgba(240,240,210,0.5) 60%, rgba(230,230,200,0) 75%);
-  box-shadow: 0 0 40px 15px rgba(255,255,220,0.2);
+    radial-gradient(ellipse 45% 40% at 30% 28%, rgba(160,160,145,0.35) 0%, transparent 100%),
+    radial-gradient(ellipse 35% 30% at 55% 50%, rgba(155,155,140,0.3) 0%, transparent 100%),
+    radial-gradient(ellipse 25% 35% at 68% 28%, rgba(165,165,150,0.25) 0%, transparent 100%),
+    radial-gradient(ellipse 30% 25% at 38% 65%, rgba(160,160,145,0.2) 0%, transparent 100%),
+    radial-gradient(ellipse 20% 20% at 22% 48%, rgba(155,155,140,0.18) 0%, transparent 100%),
+    radial-gradient(ellipse 15% 12% at 50% 72%, rgba(150,150,135,0.15) 0%, transparent 100%),
+    radial-gradient(circle at 42% 42%, rgba(255,255,245,0.97) 0%, rgba(252,252,240,0.92) 25%, rgba(245,245,232,0.7) 50%, rgba(238,238,225,0.3) 70%, transparent 80%);
+  box-shadow: 0 0 25px 8px rgba(255,255,240,0.15), 0 0 50px 20px rgba(255,255,235,0.06);
 }
 
 .shelf-title {
@@ -1360,9 +1361,9 @@ function applyReaderStyles() {
   const fontSize = document.getElementById('fontSizeSlider').value;
   const lineHeight = (parseInt(document.getElementById('lineHeightSlider').value) / 10).toFixed(1);
 
-  const r = Math.round(46 + (bright / 100) * 199);
-  const g = Math.round(37 + (bright / 100) * 203);
-  const b = Math.round(32 + (bright / 100) * 200);
+  const r = Math.round(30 + (bright / 100) * 178);
+  const g = Math.round(46 + (bright / 100) * 178);
+  const b = Math.round(34 + (bright / 100) * 166);
   const bg = `rgb(${r},${g},${b})`;
 
   let textColor;
