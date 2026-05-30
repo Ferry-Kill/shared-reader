@@ -19,7 +19,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --bg: #1c1714;
+  --bg: #1a1519;
   --bg-reader: #1a1a1e;
   --rose: #c49a9e;
   --rose-light: #e8d4d8;
@@ -63,13 +63,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 25px;
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: rgba(196, 154, 158, 0.3);
   display: inline-block;
@@ -82,9 +82,9 @@ body {
 
 .status-name {
   font-family: 'Caveat', cursive;
-  font-size: 1em;
+  font-size: 1.15em;
   color: var(--text-dim);
-  margin-right: 16px;
+  margin-right: 24px;
 }
 
 .status-name:last-child {
@@ -93,11 +93,11 @@ body {
 
 .shelf-count {
   font-family: 'Caveat', cursive;
-  font-size: 0.85em;
+  font-size: 0.9em;
   color: var(--text-dim);
   opacity: 0.5;
-  margin-top: 8px;
-  text-align: center;
+  padding: 15px 25px 0;
+  text-align: left;
 }
 
 .shelf-grid {
@@ -821,8 +821,8 @@ body {
       <span class="status-dot" id="ferryDot"></span><span class="status-name">Ferry</span>
       <span class="status-dot" id="killianDot"></span><span class="status-name">Killian</span>
     </div>
-    <div class="shelf-count" id="shelfCount"></div>
   </div>
+  <div class="shelf-count" id="shelfCount"></div>
   <div class="shelf-grid" id="shelfGrid"></div>
   <input type="file" id="fileInput" accept=".epub,application/epub+zip,*/*">
 </div>
