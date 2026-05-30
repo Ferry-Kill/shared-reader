@@ -20,7 +20,7 @@
 
 :root {
   --bg: #2a2025;
-  --bg-reader: #1a1a1e;
+  --bg-reader: #2e2520;
   --rose: #c49a9e;
   --rose-light: #e8d4d8;
   --rose-dim: rgba(196, 154, 158, 0.3);
@@ -1340,18 +1340,18 @@ function applyReaderStyles() {
   const fontSize = document.getElementById('fontSizeSlider').value;
   const lineHeight = (parseInt(document.getElementById('lineHeightSlider').value) / 10).toFixed(1);
 
-  const r = Math.round(26 + (bright / 100) * 229);
-  const g = Math.round(26 + (bright / 100) * 229);
-  const b = Math.round(30 + (bright / 100) * 225);
+  const r = Math.round(46 + (bright / 100) * 199);
+  const g = Math.round(37 + (bright / 100) * 203);
+  const b = Math.round(32 + (bright / 100) * 200);
   const bg = `rgb(${r},${g},${b})`;
 
   let textColor;
   if (bright > 50) {
-    const tv = Math.round(60 - (bright - 50) * 0.8);
-    textColor = `rgb(${tv},${tv},${tv})`;
+    const tv = Math.round(80 - (bright - 50) * 1.2);
+    textColor = `rgb(${tv},${tv - 5},${tv - 8})`;
   } else {
     const tv = Math.round(180 + (bright / 50) * 55);
-    textColor = `rgb(${tv},${tv - 12},${tv - 20})`;
+    textColor = `rgb(${tv},${tv - 8},${tv - 15})`;
   }
 
   rendition.themes.default({
