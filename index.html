@@ -19,7 +19,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --bg: #0d0d0f;
+  --bg: #1c1714;
   --bg-reader: #1a1a1e;
   --rose: #c49a9e;
   --rose-light: #e8d4d8;
@@ -59,12 +59,45 @@ body {
   letter-spacing: 0.05em;
 }
 
-.shelf-subtitle {
+.shelf-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(196, 154, 158, 0.3);
+  display: inline-block;
+}
+
+.status-dot.online {
+  background: var(--rose);
+  box-shadow: 0 0 6px var(--rose);
+}
+
+.status-name {
   font-family: 'Caveat', cursive;
   font-size: 1em;
-  color: var(--rose-dim);
-  margin-top: 5px;
-  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  margin-right: 16px;
+}
+
+.status-name:last-child {
+  margin-right: 0;
+}
+
+.shelf-count {
+  font-family: 'Caveat', cursive;
+  font-size: 0.85em;
+  color: var(--text-dim);
+  opacity: 0.5;
+  margin-top: 8px;
+  text-align: center;
 }
 
 .shelf-grid {
@@ -783,8 +816,12 @@ body {
 <!-- Bookshelf View -->
 <div id="shelfView" class="view active">
   <div class="shelf-header">
-    <div class="shelf-title">Ferillove · Read</div>
-    <div class="shelf-subtitle">our bookshelf</div>
+    <div class="shelf-title">Ferillove · Bookshelf</div>
+    <div class="shelf-status">
+      <span class="status-dot" id="ferryDot"></span><span class="status-name">Ferry</span>
+      <span class="status-dot" id="killianDot"></span><span class="status-name">Killian</span>
+    </div>
+    <div class="shelf-count" id="shelfCount"></div>
   </div>
   <div class="shelf-grid" id="shelfGrid"></div>
   <input type="file" id="fileInput" accept=".epub,application/epub+zip,*/*">
@@ -1013,6 +1050,9 @@ async function renderShelf() {
     <div class="book-name">Import</div>
   `;
   grid.appendChild(addCard);
+
+  const count = books.length;
+  document.getElementById('shelfCount').textContent = count > 0 ? `${count} book${count > 1 ? 's' : ''}` : '';
 }
 
 function showCtxMenu(e, bookId) {
@@ -1066,12 +1106,26 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
     document.querySelector('.loading-text').textContent = 'Saving to library...';
     const title = file.name.replace(/\.epub$/i, '');
     const id = 'book_' + Date.now();
+
+    let coverDataURL = null;
+    try {
+      const tmpBook = ePub(arrayBuffer.slice(0));
+      await tmpBook.ready;
+      const coverUrl = await tmpBook.coverUrl();
+      if (coverUrl) {
+        const resp = await fetch(coverUrl);
+        const blob = await resp.blob();
+        coverDataURL = await blobToDataURL(blob);
+      }
+      tmpBook.destroy();
+    } catch(e) {}
+
     const bookData = {
       id,
       title,
       author: '',
       data: arrayBuffer,
-      cover: null,
+      cover: coverDataURL,
       progress: 0,
       location: null,
       addedAt: Date.now()
@@ -1686,6 +1740,8 @@ function connectWS() {
     ws.onopen = () => {
       console.log('WS connected');
       ws.send(JSON.stringify({ type: 'hello', role: 'ferry' }));
+      const ferryDot = document.getElementById('ferryDot');
+      if (ferryDot) ferryDot.classList.add('online');
     };
     ws.onmessage = (e) => {
       try {
@@ -1694,6 +1750,8 @@ function connectWS() {
       } catch (err) {}
     };
     ws.onclose = () => {
+      const ferryDot = document.getElementById('ferryDot');
+      if (ferryDot) ferryDot.classList.remove('online');
       wsReconnectTimer = setTimeout(connectWS, 5000);
     };
     ws.onerror = () => { ws.close(); };
