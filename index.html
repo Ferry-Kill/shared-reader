@@ -1859,19 +1859,45 @@ function syncHighlight(hl) {
       text: hl.text,
       note: hl.note,
       cfiRange: hl.cfiRange,
+      chapter: getCurrentChapter(),
       timestamp: Date.now()
     }));
   }
 }
 
+function getCurrentChapter() {
+  if (!book || !book.navigation) return null;
+  const loc = currentCfi;
+  if (!loc) return null;
+  const toc = book.navigation.toc;
+  let current = toc[0]?.label || null;
+  for (const ch of toc) {
+    try {
+      const spineItem = book.spine.get(ch.href);
+      if (spineItem && rendition.location && rendition.location.start) {
+        const idx = book.spine.items.indexOf(spineItem);
+        const curIdx = rendition.location.start.index;
+        if (idx <= curIdx) current = ch.label;
+      }
+    } catch(e) {}
+  }
+  return current;
+}
+
 function syncProgress() {
   if (ws && ws.readyState === 1 && currentBook) {
+    const chapter = getCurrentChapter();
+    const todayMs = parseInt(localStorage.getItem(getTodayKey()) || '0') + getSessionMs();
+    const totalMs = parseInt(localStorage.getItem('reading_total') || '0') + getSessionMs();
     ws.send(JSON.stringify({
       type: 'reading_progress',
       bookId: currentBook.id,
       bookTitle: currentBook.title,
       progress: currentBook.progress,
       location: currentBook.location,
+      chapter: chapter,
+      chapterProgress: null,
+      readingTime: { todayMs, totalMs },
       timestamp: Date.now()
     }));
   }
