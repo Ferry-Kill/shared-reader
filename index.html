@@ -1782,18 +1782,21 @@ function updateStats() {
     estTime = '约' + formatTime(remaining) + '读完';
   }
 
+  const totalMins = Math.floor(totalMs / 60000);
+  const timeStr = totalMins < 60 ? totalMins + '<span class="stats-unit">min</span>' : Math.floor(totalMins/60) + '<span class="stats-unit">h</span>' + (totalMins%60 > 0 ? totalMins%60 + '<span class="stats-unit">m</span>' : '');
+
   document.getElementById('statsContent').innerHTML = `
     <div class="stats-col">
+      <div class="stats-label">Progress</div>
       <div class="stats-num">${progress}<span class="stats-unit">%</span></div>
-      <div class="stats-label">${estTime || '已读'}</div>
     </div>
     <div class="stats-col">
-      <div class="stats-num">${formatTime(totalMs)}</div>
-      <div class="stats-label">今日${formatTime(todayMs)}</div>
+      <div class="stats-label">Reading</div>
+      <div class="stats-num">${timeStr}</div>
     </div>
     <div class="stats-col">
-      <div class="stats-num">${totalHL}<span class="stats-unit">条</span></div>
-      <div class="stats-label">今日${todayHL}条</div>
+      <div class="stats-label">Highlights</div>
+      <div class="stats-num">${totalHL}</div>
     </div>
   `;
 }
