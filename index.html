@@ -309,6 +309,52 @@ body {
 
 .slider-popup.show { display: flex; }
 
+.font-popup-multi {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.font-popup-multi.show { display: flex; }
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.stats-popup {
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stats-popup.show { display: flex; }
+
+.stats-content {
+  width: 100%;
+  font-family: 'Caveat', cursive;
+  font-size: 0.95em;
+  color: var(--rose-light);
+  line-height: 1.7;
+}
+
+.stats-line {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-dim);
+  font-size: 0.85em;
+}
+
+.stats-line .stats-val {
+  color: var(--rose-light);
+}
+
+.export-btn {
+  font-size: 1.1em !important;
+  width: 32px !important;
+  padding: 0 !important;
+}
+
 .slider-popup label {
   font-family: 'Caveat', cursive;
   font-size: 0.9em;
@@ -571,6 +617,14 @@ body {
   border-left: 2px solid var(--warm-brown-solid);
 }
 
+.ann-time {
+  font-family: 'Caveat', cursive;
+  font-size: 0.75em;
+  color: var(--text-dim);
+  opacity: 0.5;
+  margin-bottom: 6px;
+}
+
 .ann-note {
   font-size: 0.85em;
   line-height: 1.6;
@@ -712,7 +766,8 @@ body {
   <div class="reader-header" id="readerHeader">
     <button class="reader-back" id="backBtn">&lt;</button>
     <div class="reader-book-title" id="readerBookTitle"></div>
-    <button class="reader-menu-btn" id="notesBtn">♡</button>
+    <button class="reader-menu-btn" id="notesBtn"><span id="notesLabel">♡ Notes</span></button>
+    <button class="reader-menu-btn export-btn" id="exportBtn">⤓</button>
   </div>
 
   <div class="bottom-bar" id="bottomBar">
@@ -720,7 +775,7 @@ body {
     <button class="bar-btn" id="brightBtn">☀</button>
     <button class="bar-btn" id="bleBtn">I</button>
     <button class="bar-btn" id="fontBtn">A</button>
-    <button class="bar-btn" id="lineHeightBtn">≡</button>
+    <button class="bar-btn" id="statsBtn">◔</button>
   </div>
 
   <div class="slider-popup" id="brightPopup">
@@ -728,14 +783,20 @@ body {
     <input type="range" id="brightnessSlider" min="0" max="100" value="15">
   </div>
 
-  <div class="slider-popup" id="fontPopup">
-    <label>A</label>
-    <input type="range" id="fontSizeSlider" min="14" max="28" value="16">
+  <div class="slider-popup font-popup-multi" id="fontPopup">
+    <div class="slider-row">
+      <label>A</label>
+      <input type="range" id="fontSizeSlider" min="14" max="28" value="16">
+    </div>
+    <div class="slider-row">
+      <label>≡</label>
+      <input type="range" id="lineHeightSlider" min="14" max="30" value="18">
+    </div>
   </div>
 
-  <div class="slider-popup" id="lineHeightPopup">
-    <label>≡</label>
-    <input type="range" id="lineHeightSlider" min="14" max="30" value="18">
+  <!-- Stats panel -->
+  <div class="slider-popup stats-popup" id="statsPopup">
+    <div class="stats-content" id="statsContent"></div>
   </div>
 </div>
 
@@ -1054,6 +1115,8 @@ async function openBook(bookId) {
 
     // Load and apply highlights
     await loadHighlights(bookId);
+    updateNotesCount();
+    startReadingTimer();
 
     // Events
     rendition.on('relocated', (location) => {
@@ -1130,6 +1193,8 @@ async function saveProgress(location) {
 }
 
 function goToShelf() {
+  saveTodayReading();
+  sessionStartTime = null;
   if (book) {
     book.destroy();
     book = null;
@@ -1142,7 +1207,7 @@ function goToShelf() {
   document.getElementById('bottomBar').classList.remove('show');
   document.getElementById('brightPopup').classList.remove('show');
   document.getElementById('fontPopup').classList.remove('show');
-  document.getElementById('lineHeightPopup').classList.remove('show');
+  document.getElementById('statsPopup').classList.remove('show');
   uiVisible = false;
   hideHighlightMenu();
   renderShelf();
@@ -1155,7 +1220,7 @@ function toggleUI() {
   if (!uiVisible) {
     document.getElementById('brightPopup').classList.remove('show');
     document.getElementById('fontPopup').classList.remove('show');
-    document.getElementById('lineHeightPopup').classList.remove('show');
+    document.getElementById('statsPopup').classList.remove('show');
   }
 }
 
@@ -1231,23 +1296,23 @@ document.getElementById('lineHeightSlider').addEventListener('change', onStyleCh
 document.getElementById('tocBtn').onclick = () => { openTocPanel(); };
 document.getElementById('brightBtn').onclick = () => {
   document.getElementById('fontPopup').classList.remove('show');
-  document.getElementById('lineHeightPopup').classList.remove('show');
+  document.getElementById('statsPopup').classList.remove('show');
   document.getElementById('brightPopup').classList.toggle('show');
 };
 document.getElementById('fontBtn').onclick = () => {
   document.getElementById('brightPopup').classList.remove('show');
-  document.getElementById('lineHeightPopup').classList.remove('show');
+  document.getElementById('statsPopup').classList.remove('show');
   document.getElementById('fontPopup').classList.toggle('show');
 };
 document.getElementById('bleBtn').onclick = () => {
-  // BLE I connection - placeholder for now
   alert('I connection coming soon');
 };
 
-document.getElementById('lineHeightBtn').onclick = () => {
+document.getElementById('statsBtn').onclick = () => {
   document.getElementById('brightPopup').classList.remove('show');
   document.getElementById('fontPopup').classList.remove('show');
-  document.getElementById('lineHeightPopup').classList.toggle('show');
+  updateStats();
+  document.getElementById('statsPopup').classList.toggle('show');
 };
 
 function openTocPanel() {
@@ -1391,7 +1456,7 @@ document.getElementById('hlHighlight').onclick = async () => {
   await dbPut('highlights', hl);
   applyHighlight(hl);
   clearSelection();
-
+  updateNotesCount();
   syncHighlight(hl);
 };
 
@@ -1455,6 +1520,7 @@ async function removeHighlight(hlId) {
 
   delete highlights[hlId];
   await dbDelete('highlights', hlId);
+  updateNotesCount();
 }
 
 function clearSelection() {
@@ -1507,7 +1573,9 @@ function renderAnnotations() {
     const item = document.createElement('div');
     item.className = 'ann-item';
 
-    let html = `<div class="ann-quote">"${escapeHTML(hl.text)}"</div>`;
+    const date = new Date(hl.createdAt);
+    const ts = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+    let html = `<div class="ann-quote">"${escapeHTML(hl.text)}"</div><div class="ann-time">${ts}</div>`;
 
     if (hl.note) {
       html += `<div class="ann-note ferry">
@@ -1615,6 +1683,100 @@ function syncProgress() {
     }));
   }
 }
+
+// ===== Stats =====
+let sessionStartTime = null;
+let sessionReadingMs = 0;
+
+function startReadingTimer() {
+  sessionStartTime = Date.now();
+}
+
+function getSessionMs() {
+  if (!sessionStartTime) return 0;
+  return Date.now() - sessionStartTime;
+}
+
+function getTodayKey() {
+  const d = new Date();
+  return `reading_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function saveTodayReading() {
+  if (!sessionStartTime) return;
+  const key = getTodayKey();
+  const prev = parseInt(localStorage.getItem(key) || '0');
+  const elapsed = getSessionMs();
+  localStorage.setItem(key, prev + elapsed);
+  const totalKey = 'reading_total';
+  const prevTotal = parseInt(localStorage.getItem(totalKey) || '0');
+  localStorage.setItem(totalKey, prevTotal + elapsed);
+  sessionStartTime = Date.now();
+}
+
+function formatTime(ms) {
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return mins + '分钟';
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h + '小时' + (m > 0 ? m + '分钟' : '');
+}
+
+function updateStats() {
+  if (!currentBook) return;
+  saveTodayReading();
+  const progress = currentBook.progress || 0;
+  const todayMs = parseInt(localStorage.getItem(getTodayKey()) || '0') + getSessionMs();
+  const totalMs = parseInt(localStorage.getItem('reading_total') || '0') + getSessionMs();
+  const todayHL = Object.values(highlights).filter(h => {
+    const d = new Date(h.createdAt);
+    const today = new Date();
+    return d.toDateString() === today.toDateString();
+  }).length;
+  const totalHL = Object.values(highlights).length;
+
+  let estTime = '';
+  if (progress > 0 && totalMs > 0) {
+    const remaining = totalMs / (progress / 100) - totalMs;
+    estTime = '约' + formatTime(remaining) + '读完';
+  }
+
+  document.getElementById('statsContent').innerHTML = `
+    <div class="stats-line"><span>已读</span><span class="stats-val">${progress}% ${estTime ? '· ' + estTime : ''}</span></div>
+    <div class="stats-line"><span>阅读</span><span class="stats-val">今日${formatTime(todayMs)} · 累计${formatTime(totalMs)}</span></div>
+    <div class="stats-line"><span>划线</span><span class="stats-val">今日${todayHL}条 · 累计${totalHL}条</span></div>
+  `;
+}
+
+function updateNotesCount() {
+  const count = Object.keys(highlights).length;
+  document.getElementById('notesLabel').textContent = count > 0 ? `♡ Notes(${count})` : '♡ Notes';
+}
+
+// ===== Export =====
+document.getElementById('exportBtn').onclick = () => {
+  const hls = Object.values(highlights).sort((a, b) => a.createdAt - b.createdAt);
+  if (hls.length === 0) { alert('No notes to export'); return; }
+
+  let text = `${currentBook?.title || 'Book'} — Reading Notes\n\n`;
+  hls.forEach(hl => {
+    const date = new Date(hl.createdAt);
+    const ts = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+    text += `"${hl.text}"\n`;
+    text += `— ${ts}\n`;
+    if (hl.note) text += `Ferry: ${hl.note}\n`;
+    if (hl.killianNote && hl.killianRevealed) text += `Killian: ${hl.killianNote}\n`;
+    text += `\n`;
+  });
+
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${currentBook?.title || 'notes'}_notes.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 // ===== Utils =====
 function showLoading(show) {
