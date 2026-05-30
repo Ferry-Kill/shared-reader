@@ -1169,12 +1169,15 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 
     document.querySelector('.loading-text').textContent = 'Saving to library...';
     const title = file.name.replace(/\.epub$/i, '');
-    const id = 'book_' + Date.now();
 
     let coverDataURL = null;
+    let stableId = 'book_' + Date.now();
     try {
       const tmpBook = ePub(arrayBuffer.slice(0));
       await tmpBook.ready;
+      if (tmpBook.package && tmpBook.package.metadata && tmpBook.package.metadata.identifier) {
+        stableId = 'book_' + tmpBook.package.metadata.identifier;
+      }
       const coverUrl = await tmpBook.coverUrl();
       if (coverUrl) {
         const resp = await fetch(coverUrl);
@@ -1184,15 +1187,16 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
       tmpBook.destroy();
     } catch(e) {}
 
+    const existing = await dbGet('books', stableId);
     const bookData = {
-      id,
+      id: stableId,
       title,
       author: '',
       data: arrayBuffer,
       cover: coverDataURL,
-      progress: 0,
-      location: null,
-      addedAt: Date.now()
+      progress: existing ? existing.progress : 0,
+      location: existing ? existing.location : null,
+      addedAt: existing ? existing.addedAt : Date.now()
     };
 
     await dbPut('books', bookData);
@@ -2142,6 +2146,10 @@ async function init() {
   if ('caches' in window) {
     const names = await caches.keys();
     for (const n of names) await caches.delete(n);
+  }
+
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist();
   }
 
   await openDB();
