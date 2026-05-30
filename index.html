@@ -1308,6 +1308,10 @@ async function openBook(bookId) {
       const doc = rendition.getContents()[0]?.document;
       if (doc && !doc._setup) {
         doc._setup = true;
+        const fontLink = doc.createElement('link');
+        fontLink.rel = 'stylesheet';
+        fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&display=swap';
+        doc.head.appendChild(fontLink);
         const forceStyle = doc.createElement('style');
         forceStyle.textContent = "* { font-family: 'Noto Serif SC', 'Noto Sans SC', serif !important; }";
         doc.head.appendChild(forceStyle);
