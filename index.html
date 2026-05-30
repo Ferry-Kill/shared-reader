@@ -1149,8 +1149,15 @@ async function openBook(bookId) {
     if (savedLH) document.getElementById('lineHeightSlider').value = savedLH;
     applyReaderStyles();
 
-    // Generate locations for progress tracking
-    await book.locations.generate(1024);
+    // Generate or load cached locations for progress tracking
+    const locKey = 'locations_' + bookId;
+    const cachedLoc = localStorage.getItem(locKey);
+    if (cachedLoc) {
+      book.locations.load(cachedLoc);
+    } else {
+      await book.locations.generate(1024);
+      localStorage.setItem(locKey, book.locations.save());
+    }
 
     // Load and apply highlights
     await loadHighlights(bookId);
