@@ -576,22 +576,23 @@ body {
 .note-box {
   width: 100%;
   max-width: 340px;
-  background: #1a2c1e;
-  border: 1px solid rgba(200, 216, 196, 0.15);
+  background: #fff;
+  border: 1px solid rgba(90,62,40,0.15);
   border-radius: 16px;
   padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
 .note-label {
   font-family: 'Caveat', cursive;
   font-size: 1.1em;
-  color: var(--rose-light);
+  color: #5a3e28;
   margin-bottom: 4px;
 }
 
 .note-quote {
   font-size: 0.8em;
-  color: var(--text-dim);
+  color: rgba(42, 64, 48, 0.7);
   margin-bottom: 12px;
   line-height: 1.5;
   max-height: 60px;
@@ -603,11 +604,11 @@ body {
 .note-textarea {
   width: 100%;
   min-height: 80px;
-  background: rgba(196, 154, 158, 0.08);
-  border: 1px solid rgba(196, 154, 158, 0.15);
+  background: rgba(42, 64, 48, 0.05);
+  border: 1px solid rgba(90,62,40,0.15);
   border-radius: 10px;
   padding: 12px;
-  color: var(--text);
+  color: #2a4030;
   font-family: 'Noto Serif SC', serif;
   font-size: 0.9em;
   line-height: 1.6;
@@ -615,7 +616,7 @@ body {
   outline: none;
 }
 
-.note-textarea:focus { border-color: var(--rose-dim); }
+.note-textarea:focus { border-color: rgba(90,62,40,0.3); }
 
 .note-actions {
   display: flex;
@@ -635,9 +636,9 @@ body {
   transition: background 0.2s;
 }
 
-.note-btn.cancel { color: var(--text-dim); }
-.note-btn.save { color: var(--rose-light); background: rgba(196, 154, 158, 0.15); }
-.note-btn.save:active { background: rgba(196, 154, 158, 0.3); }
+.note-btn.cancel { color: rgba(90,62,40,0.5); }
+.note-btn.save { color: #5a3e28; background: rgba(90,62,40,0.1); }
+.note-btn.save:active { background: rgba(90,62,40,0.2); }
 
 /* ===== Annotations Panel ===== */
 .annotations-panel {
