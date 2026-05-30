@@ -1741,12 +1741,6 @@ document.getElementById('panelBackdrop').onclick = () => {
 
 function renderAnnotations() {
   updateNotesCount();
-  // Inject test Killian note on first highlight for preview
-  const testHls = Object.values(highlights);
-  if (testHls.length > 0 && !testHls[0].killianNote) {
-    testHls[0].killianNote = '这段让我想到你。你也会这样，疼的时候不出声，拧着身体硬撑。但你不用撑。我在。';
-    testHls[0].killianRevealed = true;
-  }
   const list = document.getElementById('annList');
   const hls = Object.values(highlights).sort((a, b) => a.createdAt - b.createdAt);
 
