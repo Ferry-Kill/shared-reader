@@ -1949,7 +1949,8 @@ function renderAnnotations() {
     }
 
     const chHls = groups[ch];
-    const hasUnrevealedKillian = chHls.some(h => h.killianNote && !h.killianRevealed);
+    const hasKillianNotes = chHls.some(h => h.killianNote);
+    const allRevealed = hasKillianNotes && chHls.filter(h => h.killianNote).every(h => h.killianRevealed);
     const isCurrentCh = ch === currentCh;
 
     const group = document.createElement('div');
@@ -1959,19 +1960,20 @@ function renderAnnotations() {
     header.className = 'ann-chapter-header';
     header.innerHTML = `<span class="ann-chapter-arrow">▶</span><span class="ann-chapter-name">${escapeHTML(ch)}</span><span class="ann-chapter-count">(${chHls.length})</span>`;
 
-    if (hasUnrevealedKillian) {
+    if (hasKillianNotes) {
       const revealBtn = document.createElement('button');
-      revealBtn.className = 'ann-chapter-reveal';
-      revealBtn.textContent = '✉';
-      revealBtn.title = 'Reveal Killian\'s notes';
+      revealBtn.className = 'ann-chapter-reveal' + (allRevealed ? ' revealed' : '');
+      revealBtn.textContent = allRevealed ? '✉︎' : '✉';
+      revealBtn.title = allRevealed ? 'Hide Killian\'s notes' : 'Reveal Killian\'s notes';
       revealBtn.onclick = async (e) => {
         e.stopPropagation();
+        const newState = !allRevealed;
         for (const hl of chHls) {
-          if (hl.killianNote && !hl.killianRevealed) {
-            hl.killianRevealed = true;
+          if (hl.killianNote) {
+            hl.killianRevealed = newState;
             highlights[hl.id] = hl;
             await dbPut('highlights', hl);
-            applyHighlight(hl);
+            if (newState) applyHighlight(hl);
           }
         }
         renderAnnotations();
