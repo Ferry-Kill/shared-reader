@@ -1339,6 +1339,9 @@ async function openBook(bookId) {
       await rendition.display();
     }
 
+    setTimeout(() => { if (rendition) rendition.resize(); }, 300);
+    window.addEventListener('resize', () => { if (rendition) rendition.resize(); });
+
     // Restore saved settings
     const savedBright = localStorage.getItem('reader_brightness');
     const savedFont = localStorage.getItem('reader_fontsize');
