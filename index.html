@@ -535,7 +535,7 @@ body {
   font-family: 'Caveat', cursive;
   font-size: 1.05em;
   color: #2a4030;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.02em;
 }
 
@@ -821,6 +821,14 @@ body {
 }
 
 /* ===== Chapter groups in Notes ===== */
+.ann-book-divider {
+  padding: 12px 0 4px;
+  font-family: 'Caveat', cursive;
+  font-size: 1em;
+  color: #2a4030;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
 .ann-chapter-group { margin-bottom: 4px; }
 
 .ann-chapter-header {
@@ -1091,6 +1099,8 @@ const API_SERVER = 'https://killian-i.duckdns.org:8444';
 let db = null;
 let currentBook = null;
 let book = null;
+const chapterBookMap = {};
+let chapterTocOrder = [];
 let rendition = null;
 let currentCfi = null;
 let uiVisible = false;
@@ -1332,6 +1342,7 @@ async function openBook(bookId) {
 
     const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Parsing timed out (15s)')), 15000));
     await Promise.race([book.ready, timeout]);
+    buildChapterBookMap();
 
     document.querySelector('.loading-text').textContent = 'Rendering...';
 
@@ -1613,6 +1624,27 @@ function closeTocPanel() {
 }
 
 document.getElementById('tocClose').onclick = closeTocPanel;
+
+function buildChapterBookMap() {
+  Object.keys(chapterBookMap).forEach(k => delete chapterBookMap[k]);
+  chapterTocOrder = [];
+  if (!book || !book.navigation) return;
+  const bookNames = ['黄金罗盘', '奥秘匕首', '琥珀望远镜'];
+  let bi = 0;
+  function scan(items) {
+    items.forEach(entry => {
+      const label = entry.label.trim();
+      const isPart = /^\d+\s+\S/.test(label) && !/^\d+\./.test(label);
+      if (isPart) { if (entry.subitems) scan(entry.subitems); return; }
+      const m = label.match(/^(\d+)\./);
+      if (m && parseInt(m[1]) === 1) bi++;
+      chapterBookMap[label] = { bookIndex: bi - 1, bookName: bookNames[bi - 1] || '' };
+      chapterTocOrder.push(label);
+      if (entry.subitems) scan(entry.subitems);
+    });
+  }
+  scan(book.navigation.toc);
+}
 
 function renderToc() {
   const list = document.getElementById('tocList');
@@ -1897,8 +1929,24 @@ function renderAnnotations() {
     groups[ch].push(hl);
   });
 
+  groupOrder.sort((a, b) => {
+    const ia = chapterTocOrder.indexOf(a);
+    const ib = chapterTocOrder.indexOf(b);
+    return (ia === -1 ? 9999 : ia) - (ib === -1 ? 9999 : ib);
+  });
+
   list.innerHTML = '';
+  let lastBookIndex = -1;
   groupOrder.forEach(ch => {
+    const info = chapterBookMap[ch];
+    if (info && info.bookIndex !== lastBookIndex) {
+      lastBookIndex = info.bookIndex;
+      const divider = document.createElement('div');
+      divider.className = 'ann-book-divider';
+      divider.textContent = info.bookName;
+      list.appendChild(divider);
+    }
+
     const chHls = groups[ch];
     const hasUnrevealedKillian = chHls.some(h => h.killianNote && !h.killianRevealed);
     const isCurrentCh = ch === currentCh;
