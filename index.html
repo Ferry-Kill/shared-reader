@@ -870,18 +870,16 @@ body {
 
 .ann-chapter-reveal {
   border: none;
-  background: rgba(42, 64, 48, 0.08);
-  font-family: 'Noto Serif SC', serif;
-  font-size: 0.8em;
-  color: rgba(42, 64, 48, 0.6);
+  background: none;
+  font-size: 1em;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 10px;
-  margin: 4px 0 8px;
+  padding: 2px 6px;
+  opacity: 0.6;
   transition: opacity 0.2s;
+  margin: 0 0 6px;
 }
 
-.ann-chapter-reveal:active { opacity: 0.7; }
+.ann-chapter-reveal:active { opacity: 1; }
 
 .ann-chapter-items {
   display: none;
@@ -1970,7 +1968,7 @@ function renderAnnotations() {
     if (hasKillianNotes) {
       const revealBtn = document.createElement('button');
       revealBtn.className = 'ann-chapter-reveal' + (allRevealed ? ' revealed' : '');
-      revealBtn.textContent = allRevealed ? '✉ Hide' : '✉ Reveal';
+      revealBtn.textContent = '✉';
       revealBtn.onclick = async (e) => {
         const newState = !allRevealed;
         for (const hl of chHls) {
