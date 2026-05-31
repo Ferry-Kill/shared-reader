@@ -1413,29 +1413,20 @@ async function openBook(bookId) {
         selectedText = range.toString().trim();
         selectedCfiRange = cfiRange;
         if (selectedText.length > 0) {
-          // Snap page back if selection dragged it off position
-          if (rendition.location && rendition.location.start) {
-            rendition.display(rendition.location.start.cfi).then(() => {
-              const newRange = rendition.getRange(cfiRange);
-              if (newRange) {
-                const rect = newRange.getBoundingClientRect();
-                const iframe = container.querySelector('iframe');
-                const iframeRect = iframe.getBoundingClientRect();
-                showHighlightMenu(
-                  iframeRect.left + rect.left + rect.width / 2,
-                  iframeRect.top + rect.top - 10
-                );
-              }
-            });
-          } else {
-            const rect = range.getBoundingClientRect();
-            const iframe = container.querySelector('iframe');
-            const iframeRect = iframe.getBoundingClientRect();
-            showHighlightMenu(
-              iframeRect.left + rect.left + rect.width / 2,
-              iframeRect.top + rect.top - 10
-            );
+          // Fix page offset from selection drag
+          const iframe = container.querySelector('iframe');
+          if (iframe && iframe.contentDocument) {
+            const body = iframe.contentDocument.body;
+            if (body) body.scrollLeft = 0;
+            const html = iframe.contentDocument.documentElement;
+            if (html) html.scrollLeft = 0;
           }
+          const rect = range.getBoundingClientRect();
+          const iframeRect = iframe.getBoundingClientRect();
+          showHighlightMenu(
+            iframeRect.left + rect.left + rect.width / 2,
+            iframeRect.top + rect.top - 10
+          );
         }
       }
     });
