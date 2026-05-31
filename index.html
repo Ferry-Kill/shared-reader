@@ -1976,7 +1976,6 @@ function renderAnnotations() {
             hl.killianRevealed = newState;
             highlights[hl.id] = hl;
             await dbPut('highlights', hl);
-            if (newState) applyHighlight(hl);
           }
         }
         renderAnnotations();
