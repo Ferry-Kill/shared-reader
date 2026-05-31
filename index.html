@@ -1454,6 +1454,12 @@ async function openBook(bookId) {
                 toggleUI();
               }
             }
+          } else if (dx > 30) {
+            setTimeout(() => {
+              if (rendition && rendition.location && rendition.location.start) {
+                rendition.display(rendition.location.start.cfi);
+              }
+            }, 300);
           }
         });
       }
