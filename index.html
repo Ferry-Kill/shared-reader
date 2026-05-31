@@ -1433,7 +1433,7 @@ async function openBook(bookId) {
         fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&display=swap';
         doc.head.appendChild(fontLink);
         const forceStyle = doc.createElement('style');
-        forceStyle.textContent = "* { font-family: 'Noto Serif SC', 'Noto Sans SC', serif !important; }";
+        forceStyle.textContent = "* { font-family: 'Noto Serif SC', 'Noto Sans SC', serif !important; } html, body { overflow-x: hidden !important; touch-action: pan-y !important; }";
         doc.head.appendChild(forceStyle);
         doc.addEventListener('contextmenu', (e) => e.preventDefault());
         let tapStart = 0, tapX = 0, tapY = 0;
