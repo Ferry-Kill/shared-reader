@@ -870,17 +870,18 @@ body {
 
 .ann-chapter-reveal {
   border: none;
-  background: none;
-  font-size: 1em;
+  background: rgba(42, 64, 48, 0.08);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.8em;
+  color: rgba(42, 64, 48, 0.6);
   cursor: pointer;
-  padding: 2px 6px;
-  opacity: 0.6;
+  padding: 6px 12px;
+  border-radius: 10px;
+  margin: 4px 0 8px;
   transition: opacity 0.2s;
-  flex-shrink: 0;
-  margin-left: auto;
 }
 
-.ann-chapter-reveal:active { opacity: 1; }
+.ann-chapter-reveal:active { opacity: 0.7; }
 
 .ann-chapter-items {
   display: none;
@@ -1960,13 +1961,17 @@ function renderAnnotations() {
     header.className = 'ann-chapter-header';
     header.innerHTML = `<span class="ann-chapter-arrow">▶</span><span class="ann-chapter-name">${escapeHTML(ch)}</span><span class="ann-chapter-count">(${chHls.length})</span>`;
 
+    header.onclick = () => { group.classList.toggle('open'); };
+    group.appendChild(header);
+
+    const items = document.createElement('div');
+    items.className = 'ann-chapter-items';
+
     if (hasKillianNotes) {
       const revealBtn = document.createElement('button');
       revealBtn.className = 'ann-chapter-reveal' + (allRevealed ? ' revealed' : '');
-      revealBtn.textContent = allRevealed ? '✉︎' : '✉';
-      revealBtn.title = allRevealed ? 'Hide Killian\'s notes' : 'Reveal Killian\'s notes';
+      revealBtn.textContent = allRevealed ? '✉ Hide' : '✉ Reveal';
       revealBtn.onclick = async (e) => {
-        e.stopPropagation();
         const newState = !allRevealed;
         for (const hl of chHls) {
           if (hl.killianNote) {
@@ -1978,14 +1983,8 @@ function renderAnnotations() {
         }
         renderAnnotations();
       };
-      header.appendChild(revealBtn);
+      items.appendChild(revealBtn);
     }
-
-    header.onclick = () => { group.classList.toggle('open'); };
-    group.appendChild(header);
-
-    const items = document.createElement('div');
-    items.className = 'ann-chapter-items';
 
     chHls.forEach(hl => {
       const item = document.createElement('div');
