@@ -566,9 +566,9 @@ body {
   color: #2a4030;
   font-weight: 600;
   background: rgba(42, 80, 48, 0.12);
-  border-radius: 6px;
+  border-radius: 12px;
   margin: 2px 10px 2px 28px;
-  padding: 8px 10px;
+  padding: 8px 14px;
   width: auto;
 }
 
@@ -1620,8 +1620,10 @@ function renderToc() {
   if (!book || !book.navigation) return;
   const currentCh = getCurrentChapter();
 
+  const bookNames = ['黄金罗盘', '奥秘匕首', '琥珀望远镜'];
+  let bookIndex = 0;
+
   function classifyEntry(label) {
-    if (/黑暗物质|精灵守护神|魔法神刀|琥珀望远镜/.test(label)) return 'book';
     if (/^\d+\s+\S/.test(label) && !/^\d+\./.test(label)) return 'part';
     return 'chapter';
   }
@@ -1632,27 +1634,29 @@ function renderToc() {
       const type = classifyEntry(label);
       const hasSubs = entry.subitems && entry.subitems.length > 0;
 
-      if (type === 'book') {
+      if (type === 'part') {
+        if (hasSubs) renderItems(entry.subitems);
+        return;
+      }
+
+      const chMatch = label.match(/^(\d+)\./);
+      if (chMatch && parseInt(chMatch[1]) === 1) {
         const el = document.createElement('div');
         el.className = 'toc-book';
-        el.textContent = label;
+        el.textContent = bookNames[bookIndex] || '';
         list.appendChild(el);
-      } else if (type === 'part') {
-        const el = document.createElement('div');
-        el.className = 'toc-part';
-        el.textContent = label;
-        list.appendChild(el);
-      } else {
-        const item = document.createElement('button');
-        item.className = 'toc-chapter' + (label === currentCh ? ' active' : '');
-        item.textContent = label;
-        item.onclick = () => {
-          closeTocPanel();
-          rendition.display(entry.href);
-          if (uiVisible) toggleUI();
-        };
-        list.appendChild(item);
+        bookIndex++;
       }
+
+      const item = document.createElement('button');
+      item.className = 'toc-chapter' + (label === currentCh ? ' active' : '');
+      item.textContent = label;
+      item.onclick = () => {
+        closeTocPanel();
+        rendition.display(entry.href);
+        if (uiVisible) toggleUI();
+      };
+      list.appendChild(item);
 
       if (hasSubs) renderItems(entry.subitems);
     });
