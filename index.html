@@ -562,7 +562,24 @@ body {
 }
 
 .toc-chapter:active { background: rgba(42, 64, 48, 0.1); }
-.toc-chapter.active { color: #2a4030; font-weight: 700; }
+.toc-chapter.active {
+  color: #2a4030;
+  font-weight: 600;
+  background: rgba(42, 80, 48, 0.12);
+  border-radius: 6px;
+  margin: 2px 10px 2px 28px;
+  padding: 8px 10px;
+  width: auto;
+}
+
+.toc-item.active {
+  font-weight: 600;
+  background: rgba(42, 80, 48, 0.12);
+  border-radius: 6px;
+  margin: 2px 10px;
+  padding: 10px;
+  width: auto;
+}
 
 
 /* ===== Highlight Menu ===== */
@@ -1603,42 +1620,45 @@ function renderToc() {
   if (!book || !book.navigation) return;
   const currentCh = getCurrentChapter();
 
-  book.navigation.toc.forEach(entry => {
-    const hasSubs = entry.subitems && entry.subitems.length > 0;
+  function classifyEntry(label) {
+    if (/黑暗物质|精灵守护神|魔法神刀|琥珀望远镜/.test(label)) return 'book';
+    if (/^\d+\s+\S/.test(label) && !/^\d+\./.test(label)) return 'part';
+    return 'chapter';
+  }
 
-    if (hasSubs) {
-      const bookOrPart = document.createElement('div');
+  function renderItems(items) {
+    items.forEach(entry => {
       const label = entry.label.trim();
-      const isBookTitle = label.includes('黑暗物质') || label.includes('精灵守护神') || label.includes('魔法神刀') || label.includes('琥珀望远镜');
-      bookOrPart.className = isBookTitle ? 'toc-book' : 'toc-part';
-      bookOrPart.textContent = label;
-      list.appendChild(bookOrPart);
+      const type = classifyEntry(label);
+      const hasSubs = entry.subitems && entry.subitems.length > 0;
 
-      entry.subitems.forEach(sub => {
+      if (type === 'book') {
+        const el = document.createElement('div');
+        el.className = 'toc-book';
+        el.textContent = label;
+        list.appendChild(el);
+      } else if (type === 'part') {
+        const el = document.createElement('div');
+        el.className = 'toc-part';
+        el.textContent = label;
+        list.appendChild(el);
+      } else {
         const item = document.createElement('button');
-        const subLabel = sub.label.trim();
-        item.className = 'toc-chapter' + (subLabel === currentCh ? ' active' : '');
-        item.textContent = subLabel;
+        item.className = 'toc-chapter' + (label === currentCh ? ' active' : '');
+        item.textContent = label;
         item.onclick = () => {
           closeTocPanel();
-          rendition.display(sub.href);
+          rendition.display(entry.href);
           if (uiVisible) toggleUI();
         };
         list.appendChild(item);
-      });
-    } else {
-      const item = document.createElement('button');
-      const label = entry.label.trim();
-      item.className = 'toc-item' + (label === currentCh ? ' active' : '');
-      item.textContent = label;
-      item.onclick = () => {
-        closeTocPanel();
-        rendition.display(entry.href);
-        if (uiVisible) toggleUI();
-      };
-      list.appendChild(item);
-    }
-  });
+      }
+
+      if (hasSubs) renderItems(entry.subitems);
+    });
+  }
+
+  renderItems(book.navigation.toc);
 }
 
 // ===== Highlights =====
