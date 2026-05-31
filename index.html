@@ -1413,15 +1413,8 @@ async function openBook(bookId) {
         selectedText = range.toString().trim();
         selectedCfiRange = cfiRange;
         if (selectedText.length > 0) {
-          // Fix page offset from selection drag
-          const iframe = container.querySelector('iframe');
-          if (iframe && iframe.contentDocument) {
-            const body = iframe.contentDocument.body;
-            if (body) body.scrollLeft = 0;
-            const html = iframe.contentDocument.documentElement;
-            if (html) html.scrollLeft = 0;
-          }
           const rect = range.getBoundingClientRect();
+          const iframe = container.querySelector('iframe');
           const iframeRect = iframe.getBoundingClientRect();
           showHighlightMenu(
             iframeRect.left + rect.left + rect.width / 2,
