@@ -411,9 +411,8 @@ body {
   gap: 4px;
   flex: 1;
 }
-.stats-col:nth-child(2) {
-  flex: 1.6;
-}
+.stats-col:nth-child(1) { flex: 1.3; }
+.stats-col:nth-child(2) { flex: 1.6; }
 
 .stats-num {
   font-family: 'Caveat', cursive;
@@ -2329,10 +2328,13 @@ function updateStats() {
   }
   const timeStr = fmtShort(todayMs) + '<span class="stats-unit">/</span>' + fmtShort(totalMs);
 
+  const chPct = getChapterProgress() || 0;
+  const progressStr = chPct + '<span class="stats-unit">%/</span>' + progress + '<span class="stats-unit">%</span>';
+
   document.getElementById('statsContent').innerHTML = `
     <div class="stats-col">
       <div class="stats-label">Progress</div>
-      <div class="stats-num">${progress}<span class="stats-unit">%</span></div>
+      <div class="stats-num">${progressStr}</div>
     </div>
     <div class="stats-col">
       <div class="stats-label">Reading</div>
