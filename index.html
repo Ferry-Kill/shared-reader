@@ -1438,28 +1438,32 @@ async function openBook(bookId) {
         doc.head.appendChild(forceStyle);
         doc.addEventListener('contextmenu', (e) => e.preventDefault());
         // Fix: prevent text selection from causing page jumps (horizontal & vertical)
-        // epub.js uses CSS columns; browser auto-scrolls to show selection.
-        // Poll every frame during selection to enforce saved scroll positions
-        // on ALL elements: iframe internals + every wrapper up to #epubContainer.
+        // Key: capture scroll positions on touchstart (BEFORE browser auto-scrolls
+        // for selection), then enforce those positions every frame during selection.
         const scrollEl = doc.scrollingElement || doc.documentElement;
         let _selRAF = null;
         let _savedPos = [];
-        const captureAll = () => {
-          _savedPos = [];
-          _savedPos.push({ el: scrollEl, l: scrollEl.scrollLeft, t: scrollEl.scrollTop });
+        const capturePositions = () => {
+          const pos = [];
+          pos.push({ el: scrollEl, l: scrollEl.scrollLeft, t: scrollEl.scrollTop });
           if (doc.body && doc.body !== scrollEl) {
-            _savedPos.push({ el: doc.body, l: doc.body.scrollLeft, t: doc.body.scrollTop });
+            pos.push({ el: doc.body, l: doc.body.scrollLeft, t: doc.body.scrollTop });
           }
           const iframe = document.querySelector('#epubContainer iframe');
           if (iframe) {
             let el = iframe;
             while (el && el.id !== 'epubContainer') {
-              _savedPos.push({ el, l: el.scrollLeft, t: el.scrollTop });
+              pos.push({ el, l: el.scrollLeft, t: el.scrollTop });
               el = el.parentElement;
             }
-            if (el) _savedPos.push({ el, l: el.scrollLeft, t: el.scrollTop });
+            if (el) pos.push({ el, l: el.scrollLeft, t: el.scrollTop });
           }
+          return pos;
         };
+        // Capture on touchstart — fires before any selection-related scroll
+        doc.addEventListener('touchstart', () => {
+          if (!_textSelActive) _savedPos = capturePositions();
+        }, { passive: true });
         const enforceAll = () => {
           if (!_textSelActive) return;
           for (const s of _savedPos) {
@@ -1468,16 +1472,15 @@ async function openBook(bookId) {
               if (s.el.scrollTop !== s.t) s.el.scrollTop = s.t;
             } catch(e) {}
           }
-          // Also lock main document scroll (body has overflow:hidden, should never scroll)
-          if (document.documentElement.scrollTop !== 0) document.documentElement.scrollTop = 0;
-          if (document.body.scrollTop !== 0) document.body.scrollTop = 0;
-          if (document.documentElement.scrollLeft !== 0) document.documentElement.scrollLeft = 0;
-          if (document.body.scrollLeft !== 0) document.body.scrollLeft = 0;
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+          document.documentElement.scrollLeft = 0;
+          document.body.scrollLeft = 0;
           _selRAF = requestAnimationFrame(enforceAll);
         };
         doc.addEventListener('selectstart', () => {
           _textSelActive = true;
-          captureAll();
+          if (_savedPos.length === 0) _savedPos = capturePositions();
           if (_selRAF) cancelAnimationFrame(_selRAF);
           _selRAF = requestAnimationFrame(enforceAll);
         });
