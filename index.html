@@ -1998,7 +1998,17 @@ document.getElementById('panelBackdrop').onclick = () => {
 function renderAnnotations() {
   updateNotesCount();
   const list = document.getElementById('annList');
-  let hls = Object.values(highlights).sort((a, b) => (a.cfiRange || '').localeCompare(b.cfiRange || ''));
+  function cfiCompare(a, b) {
+    const numsA = (a || '').match(/\d+/g) || [];
+    const numsB = (b || '').match(/\d+/g) || [];
+    for (let i = 0; i < Math.max(numsA.length, numsB.length); i++) {
+      const na = parseInt(numsA[i] || '0');
+      const nb = parseInt(numsB[i] || '0');
+      if (na !== nb) return na - nb;
+    }
+    return 0;
+  }
+  let hls = Object.values(highlights).sort((a, b) => cfiCompare(a.cfiRange, b.cfiRange));
   if (notesOnlyFilter) hls = hls.filter(h => h.note);
 
   if (hls.length === 0) {
