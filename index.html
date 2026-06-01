@@ -1505,14 +1505,7 @@ async function openBook(bookId) {
               if (document.getElementById('highlightMenu').classList.contains('show')) {
                 hideHighlightMenu();
               } else {
-                const vw = window.innerWidth;
-                if (tapX < vw * 0.3) {
-                  if (rendition) rendition.prev();
-                } else if (tapX > vw * 0.7) {
-                  if (rendition) rendition.next();
-                } else {
-                  toggleUI();
-                }
+                toggleUI();
               }
             }
           }
