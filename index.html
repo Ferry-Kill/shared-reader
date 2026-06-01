@@ -1998,7 +1998,7 @@ document.getElementById('panelBackdrop').onclick = () => {
 function renderAnnotations() {
   updateNotesCount();
   const list = document.getElementById('annList');
-  let hls = Object.values(highlights).sort((a, b) => a.createdAt - b.createdAt);
+  let hls = Object.values(highlights).sort((a, b) => (a.cfiRange || '').localeCompare(b.cfiRange || ''));
   if (notesOnlyFilter) hls = hls.filter(h => h.note);
 
   if (hls.length === 0) {
