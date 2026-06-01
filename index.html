@@ -1468,6 +1468,11 @@ async function openBook(bookId) {
               if (s.el.scrollTop !== s.t) s.el.scrollTop = s.t;
             } catch(e) {}
           }
+          // Also lock main document scroll (body has overflow:hidden, should never scroll)
+          if (document.documentElement.scrollTop !== 0) document.documentElement.scrollTop = 0;
+          if (document.body.scrollTop !== 0) document.body.scrollTop = 0;
+          if (document.documentElement.scrollLeft !== 0) document.documentElement.scrollLeft = 0;
+          if (document.body.scrollLeft !== 0) document.body.scrollLeft = 0;
           _selRAF = requestAnimationFrame(enforceAll);
         };
         doc.addEventListener('selectstart', () => {
