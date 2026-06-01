@@ -2299,7 +2299,7 @@ function getSessionMs() {
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    if (currentBook) { saveTodayReading(); pauseTimer(); }
+    if (currentBook) { syncProgress(); saveTodayReading(); pauseTimer(); }
   } else {
     if (currentBook) resumeTimer();
     if (rendition) setTimeout(() => rendition.resize(), 200);
