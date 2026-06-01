@@ -734,6 +734,18 @@ body {
   gap: 12px;
 }
 
+.ann-filter {
+  border: none;
+  background: none;
+  color: rgba(42, 64, 48, 0.4);
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.ann-filter.active {
+  color: #2a4030;
+}
+
 .ann-export {
   border: none;
   background: none;
@@ -1072,6 +1084,7 @@ body {
   <div class="ann-header">
     <div class="ann-title" id="annTitle">Notes</div>
     <div class="ann-header-right">
+      <button class="ann-filter" id="annFilterBtn">✎</button>
       <button class="ann-export" id="exportBtn">✧</button>
       <button class="ann-close" id="annClose">✕</button>
     </div>
@@ -1968,6 +1981,13 @@ function closeAnnotationsPanel() {
   document.getElementById('annPanel').classList.remove('show');
 }
 
+let notesOnlyFilter = false;
+document.getElementById('annFilterBtn').onclick = () => {
+  notesOnlyFilter = !notesOnlyFilter;
+  document.getElementById('annFilterBtn').classList.toggle('active', notesOnlyFilter);
+  renderAnnotations();
+};
+
 document.getElementById('notesBtn').onclick = () => { openAnnotationsPanel(); };
 document.getElementById('annClose').onclick = closeAnnotationsPanel;
 document.getElementById('panelBackdrop').onclick = () => {
@@ -1978,7 +1998,8 @@ document.getElementById('panelBackdrop').onclick = () => {
 function renderAnnotations() {
   updateNotesCount();
   const list = document.getElementById('annList');
-  const hls = Object.values(highlights).sort((a, b) => a.createdAt - b.createdAt);
+  let hls = Object.values(highlights).sort((a, b) => a.createdAt - b.createdAt);
+  if (notesOnlyFilter) hls = hls.filter(h => h.note);
 
   if (hls.length === 0) {
     list.innerHTML = '<div class="ann-empty">No notes yet. Start reading ♡</div>';
@@ -2307,11 +2328,8 @@ function updateStats() {
   const progress = currentBook.progress || 0;
   const todayMs = parseInt(localStorage.getItem(getTodayKey()) || '0') + getSessionMs();
   const totalMs = parseInt(localStorage.getItem('reading_total') || '0') + getSessionMs();
-  const todayHL = Object.values(highlights).filter(h => {
-    const d = new Date(h.createdAt);
-    const today = new Date();
-    return d.toDateString() === today.toDateString();
-  }).length;
+  const today = new Date();
+  const todayHL = Object.values(highlights).filter(h => new Date(h.createdAt).toDateString() === today.toDateString()).length;
   const totalHL = Object.values(highlights).length;
 
   let estTime = '';
