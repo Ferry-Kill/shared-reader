@@ -2367,14 +2367,19 @@ function updateStats() {
 
 function updateNotesCount() {
   const allHL = Object.values(highlights);
-  const total = allHL.length;
   const today = new Date();
-  const todayCount = allHL.filter(h => {
-    const d = new Date(h.createdAt);
-    return d.toDateString() === today.toDateString();
-  }).length;
   const titleEl = document.getElementById('annTitle');
-  if (titleEl) titleEl.textContent = total > 0 ? `Notes(${todayCount}/${total})` : 'Notes';
+  if (!titleEl) return;
+
+  if (notesOnlyFilter) {
+    const withNotes = allHL.filter(h => h.note);
+    const todayNotes = withNotes.filter(h => new Date(h.createdAt).toDateString() === today.toDateString()).length;
+    titleEl.textContent = withNotes.length > 0 ? `Notes(${todayNotes}/${withNotes.length})` : 'Notes';
+  } else {
+    const total = allHL.length;
+    const todayCount = allHL.filter(h => new Date(h.createdAt).toDateString() === today.toDateString()).length;
+    titleEl.textContent = total > 0 ? `Notes(${todayCount}/${total})` : 'Notes';
+  }
 }
 
 // ===== Export =====
