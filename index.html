@@ -1373,9 +1373,6 @@ async function openBook(bookId) {
 
     setTimeout(() => { if (rendition) rendition.resize(); }, 300);
     window.addEventListener('resize', () => { if (rendition) rendition.resize(); });
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && rendition) setTimeout(() => rendition.resize(), 200);
-    });
 
     // Restore saved settings
     const savedBright = localStorage.getItem('reader_brightness');
@@ -1408,7 +1405,6 @@ async function openBook(bookId) {
       updateProgress(location);
       saveProgress(location);
       hideHighlightMenu();
-      resetIdleTimer();
     });
 
     rendition.on('selected', (cfiRange, contents) => {
@@ -1544,7 +1540,7 @@ async function saveProgress(location) {
 
 function goToShelf() {
   saveTodayReading();
-  sessionStartTime = null;
+  pauseTimer();
   if (book) {
     book.destroy();
     book = null;
@@ -2247,37 +2243,38 @@ function syncProgress() {
 // ===== Stats =====
 let sessionStartTime = null;
 let sessionReadingMs = 0;
-let idleTimer = null;
-let isIdle = false;
-let idleSince = null;
 
 function startReadingTimer() {
   sessionStartTime = Date.now();
   sessionReadingMs = 0;
-  isIdle = false;
-  resetIdleTimer();
 }
 
-function resetIdleTimer() {
-  if (idleTimer) clearTimeout(idleTimer);
-  if (isIdle) {
-    isIdle = false;
+function pauseTimer() {
+  if (sessionStartTime) {
+    sessionReadingMs += Date.now() - sessionStartTime;
+    sessionStartTime = null;
+  }
+}
+
+function resumeTimer() {
+  if (!sessionStartTime) {
     sessionStartTime = Date.now();
   }
-  idleTimer = setTimeout(() => {
-    if (sessionStartTime) {
-      sessionReadingMs += Date.now() - sessionStartTime;
-      sessionStartTime = null;
-      isIdle = true;
-    }
-  }, 180000);
 }
 
 function getSessionMs() {
-  if (isIdle) return sessionReadingMs;
   if (!sessionStartTime) return sessionReadingMs;
   return sessionReadingMs + (Date.now() - sessionStartTime);
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (currentBook) { saveTodayReading(); pauseTimer(); }
+  } else {
+    if (currentBook) resumeTimer();
+    if (rendition) setTimeout(() => rendition.resize(), 200);
+  }
+});
 
 function getTodayKey() {
   const d = new Date();
@@ -2294,7 +2291,7 @@ function saveTodayReading() {
   const prevTotal = parseInt(localStorage.getItem(totalKey) || '0');
   localStorage.setItem(totalKey, prevTotal + elapsed);
   sessionReadingMs = 0;
-  if (!isIdle) sessionStartTime = Date.now();
+  if (sessionStartTime) sessionStartTime = Date.now();
 }
 
 function formatTime(ms) {
