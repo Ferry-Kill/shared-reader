@@ -1442,25 +1442,33 @@ async function openBook(bookId) {
         // In paginated mode epub.js uses CSS columns; browser auto-scrolls
         // to show selected text, which shifts to a different column (= page)
         const scrollEl = doc.scrollingElement || doc.documentElement;
-        let _savedSL = 0;
+        let _savedSL = 0, _savedST = 0;
         doc.addEventListener('selectstart', () => {
           _savedSL = scrollEl.scrollLeft;
+          _savedST = scrollEl.scrollTop;
           _textSelActive = true;
           const cont = document.getElementById('epubContainer');
           for (const el of cont.querySelectorAll('*')) {
-            if (el.scrollWidth > el.clientWidth) _outerScrollSaves.set(el, el.scrollLeft);
+            if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
+              _outerScrollSaves.set(el, { left: el.scrollLeft, top: el.scrollTop });
+            }
           }
         });
         scrollEl.addEventListener('scroll', () => {
-          if (_textSelActive && scrollEl.scrollLeft !== _savedSL) {
-            scrollEl.scrollLeft = _savedSL;
-          }
+          if (!_textSelActive) return;
+          if (scrollEl.scrollLeft !== _savedSL) scrollEl.scrollLeft = _savedSL;
+          if (scrollEl.scrollTop !== _savedST) scrollEl.scrollTop = _savedST;
         });
         if (doc.body && doc.body !== scrollEl) {
+          let _bodySL = 0, _bodyST = 0;
+          doc.addEventListener('selectstart', () => {
+            _bodySL = doc.body.scrollLeft;
+            _bodyST = doc.body.scrollTop;
+          });
           doc.body.addEventListener('scroll', () => {
-            if (_textSelActive && doc.body.scrollLeft !== _savedSL) {
-              doc.body.scrollLeft = _savedSL;
-            }
+            if (!_textSelActive) return;
+            if (doc.body.scrollLeft !== _bodySL) doc.body.scrollLeft = _bodySL;
+            if (doc.body.scrollTop !== _bodyST) doc.body.scrollTop = _bodyST;
           });
         }
         doc.addEventListener('touchend', () => setTimeout(() => { _textSelActive = false; }, 500), { passive: true });
@@ -1497,8 +1505,9 @@ async function openBook(bookId) {
       epubCont.addEventListener('scroll', (e) => {
         if (!_textSelActive) return;
         const saved = _outerScrollSaves.get(e.target);
-        if (saved !== undefined && e.target.scrollLeft !== saved) {
-          e.target.scrollLeft = saved;
+        if (saved) {
+          if (e.target.scrollLeft !== saved.left) e.target.scrollLeft = saved.left;
+          if (e.target.scrollTop !== saved.top) e.target.scrollTop = saved.top;
         }
       }, true);
     }
