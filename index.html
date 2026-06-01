@@ -411,6 +411,9 @@ body {
   gap: 4px;
   flex: 1;
 }
+.stats-col:nth-child(2) {
+  flex: 1.6;
+}
 
 .stats-num {
   font-family: 'Caveat', cursive;
@@ -2321,8 +2324,13 @@ function updateStats() {
     estTime = '约' + formatTime(remaining) + '读完';
   }
 
-  const totalMins = Math.floor(totalMs / 60000);
-  const timeStr = totalMins < 60 ? totalMins + '<span class="stats-unit">min</span>' : Math.floor(totalMins/60) + '<span class="stats-unit">h</span>' + (totalMins%60 > 0 ? totalMins%60 + '<span class="stats-unit">m</span>' : '');
+  function fmtShort(ms) {
+    const m = Math.floor(ms / 60000);
+    if (m < 60) return m + '<span class="stats-unit">m</span>';
+    const h = Math.floor(m / 60);
+    return h + '<span class="stats-unit">h</span>' + (m % 60 > 0 ? (m % 60) + '<span class="stats-unit">m</span>' : '');
+  }
+  const timeStr = fmtShort(todayMs) + '<span class="stats-unit">/</span>' + fmtShort(totalMs);
 
   document.getElementById('statsContent').innerHTML = `
     <div class="stats-col">
