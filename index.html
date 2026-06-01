@@ -1113,6 +1113,8 @@ let wsReconnectTimer = null;
 let highlights = {};
 let longPressTimer = null;
 let ctxTargetId = null;
+let _textSelActive = false;
+let _outerScrollSaves = new WeakMap();
 
 // ===== IndexedDB =====
 function openDB() {
@@ -1436,6 +1438,33 @@ async function openBook(bookId) {
         forceStyle.textContent = "* { font-family: 'Noto Serif SC', 'Noto Sans SC', serif !important; }";
         doc.head.appendChild(forceStyle);
         doc.addEventListener('contextmenu', (e) => e.preventDefault());
+        // Fix: prevent text selection from causing horizontal page jumps
+        // In paginated mode epub.js uses CSS columns; browser auto-scrolls
+        // to show selected text, which shifts to a different column (= page)
+        const scrollEl = doc.scrollingElement || doc.documentElement;
+        let _savedSL = 0;
+        doc.addEventListener('selectstart', () => {
+          _savedSL = scrollEl.scrollLeft;
+          _textSelActive = true;
+          const cont = document.getElementById('epubContainer');
+          for (const el of cont.querySelectorAll('*')) {
+            if (el.scrollWidth > el.clientWidth) _outerScrollSaves.set(el, el.scrollLeft);
+          }
+        });
+        scrollEl.addEventListener('scroll', () => {
+          if (_textSelActive && scrollEl.scrollLeft !== _savedSL) {
+            scrollEl.scrollLeft = _savedSL;
+          }
+        });
+        if (doc.body && doc.body !== scrollEl) {
+          doc.body.addEventListener('scroll', () => {
+            if (_textSelActive && doc.body.scrollLeft !== _savedSL) {
+              doc.body.scrollLeft = _savedSL;
+            }
+          });
+        }
+        doc.addEventListener('touchend', () => setTimeout(() => { _textSelActive = false; }, 500), { passive: true });
+        doc.addEventListener('mouseup', () => setTimeout(() => { _textSelActive = false; }, 300));
         let tapStart = 0, tapX = 0, tapY = 0;
         doc.addEventListener('touchstart', (e) => {
           tapStart = Date.now(); tapX = e.touches[0].clientX; tapY = e.touches[0].clientY;
@@ -1460,6 +1489,19 @@ async function openBook(bookId) {
     });
 
     showLoading(false);
+
+    // Outer container scroll lock during text selection (add once)
+    const epubCont = document.getElementById('epubContainer');
+    if (!epubCont._scrollLockSetup) {
+      epubCont._scrollLockSetup = true;
+      epubCont.addEventListener('scroll', (e) => {
+        if (!_textSelActive) return;
+        const saved = _outerScrollSaves.get(e.target);
+        if (saved !== undefined && e.target.scrollLeft !== saved) {
+          e.target.scrollLeft = saved;
+        }
+      }, true);
+    }
 
   } catch (err) {
     console.error('Open book error:', err);
