@@ -1852,6 +1852,9 @@ document.getElementById('hlHighlight').onclick = async () => {
   if (!selectedCfiRange || !selectedText || !currentBook) return;
   hideHighlightMenu();
 
+  const existing = Object.values(highlights).find(h => h.cfiRange === selectedCfiRange);
+  if (existing) { clearSelection(); return; }
+
   const hl = {
     id: 'hl_' + Date.now(),
     bookId: currentBook.id,
@@ -1932,6 +1935,14 @@ async function removeHighlight(hlId) {
   delete highlights[hlId];
   await dbDelete('highlights', hlId);
   updateNotesCount();
+
+  if (ws && ws.readyState === 1) {
+    ws.send(JSON.stringify({
+      type: 'highlight_delete',
+      bookId: hl.bookId,
+      highlightId: hlId
+    }));
+  }
 }
 
 function clearSelection() {
