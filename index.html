@@ -2001,7 +2001,7 @@ function applyHighlight(hl) {
       other.id !== hl.id && other.cfiRange === hl.cfiRange &&
       other.owner !== hl.owner && (other.owner !== 'killian' || other.killianOwnRevealed)
     );
-    if (hasOverlap) color = 'rgba(196,154,158,0.45)';
+    if (hasOverlap) color = 'rgba(196,154,158,0.3)';
     rendition.annotations.highlight(hl.cfiRange, { id: hl.id }, (e) => {
       e.preventDefault();
       showExistingHighlightMenu(hl.id, e);
