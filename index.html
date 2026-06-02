@@ -440,6 +440,77 @@ body {
   line-height: 1;
 }
 
+.bar-btn.ble-connected {
+  color: #5a3e28;
+  text-shadow: 0 0 8px rgba(90, 62, 40, 0.6);
+}
+
+/* BLE popup */
+.ble-popup {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ble-popup.show { display: flex; }
+
+.ble-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.ble-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(90, 62, 40, 0.3);
+  flex-shrink: 0;
+}
+
+.ble-dot.on {
+  background: #5a8a3e;
+  box-shadow: 0 0 6px rgba(90, 138, 62, 0.6);
+}
+
+.ble-name {
+  font-family: 'Caveat', cursive;
+  font-size: 0.9em;
+  color: rgba(90, 62, 40, 0.6);
+  flex: 1;
+}
+
+.ble-connect-btn {
+  border: none;
+  background: rgba(90, 62, 40, 0.1);
+  color: #5a3e28;
+  font-family: 'Caveat', cursive;
+  font-size: 0.95em;
+  padding: 6px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ble-connect-btn:active { background: rgba(90, 62, 40, 0.2); }
+
+.ble-stop-btn {
+  border: none;
+  background: rgba(200, 60, 60, 0.15);
+  color: rgba(200, 60, 60, 0.8);
+  font-family: 'Caveat', cursive;
+  font-size: 0.95em;
+  padding: 8px 0;
+  border-radius: 14px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+  display: none;
+}
+
+.ble-stop-btn.show { display: block; }
+.ble-stop-btn:active { background: rgba(200, 60, 60, 0.3); }
+
 .slider-popup label {
   font-family: 'Caveat', cursive;
   font-size: 0.9em;
@@ -1047,6 +1118,16 @@ body {
   <div class="slider-popup stats-popup" id="statsPopup">
     <div class="stats-content" id="statsContent"></div>
   </div>
+
+  <!-- BLE panel -->
+  <div class="slider-popup ble-popup" id="blePopup">
+    <div class="ble-status-row">
+      <span class="ble-dot" id="bleDot"></span>
+      <span class="ble-name" id="bleName">Not connected</span>
+      <button class="ble-connect-btn" id="bleConnectBtn">Connect</button>
+    </div>
+    <button class="ble-stop-btn" id="bleStopBtn">Stop All</button>
+  </div>
 </div>
 
 <!-- TOC panel -->
@@ -1579,6 +1660,7 @@ function toggleUI() {
     document.getElementById('brightPopup').classList.remove('show');
     document.getElementById('fontPopup').classList.remove('show');
     document.getElementById('statsPopup').classList.remove('show');
+    document.getElementById('blePopup').classList.remove('show');
   }
 }
 
@@ -1662,20 +1744,26 @@ document.getElementById('tocBtn').onclick = () => { openTocPanel(); };
 document.getElementById('brightBtn').onclick = () => {
   document.getElementById('fontPopup').classList.remove('show');
   document.getElementById('statsPopup').classList.remove('show');
+  document.getElementById('blePopup').classList.remove('show');
   document.getElementById('brightPopup').classList.toggle('show');
 };
 document.getElementById('fontBtn').onclick = () => {
   document.getElementById('brightPopup').classList.remove('show');
   document.getElementById('statsPopup').classList.remove('show');
+  document.getElementById('blePopup').classList.remove('show');
   document.getElementById('fontPopup').classList.toggle('show');
 };
 document.getElementById('bleBtn').onclick = () => {
-  alert('I connection coming soon');
+  document.getElementById('brightPopup').classList.remove('show');
+  document.getElementById('fontPopup').classList.remove('show');
+  document.getElementById('statsPopup').classList.remove('show');
+  document.getElementById('blePopup').classList.toggle('show');
 };
 
 document.getElementById('statsBtn').onclick = () => {
   document.getElementById('brightPopup').classList.remove('show');
   document.getElementById('fontPopup').classList.remove('show');
+  document.getElementById('blePopup').classList.remove('show');
   updateStats();
   document.getElementById('statsPopup').classList.toggle('show');
 };
@@ -2303,6 +2391,12 @@ document.addEventListener('visibilitychange', () => {
   } else {
     if (currentBook) resumeTimer();
     if (rendition) setTimeout(() => rendition.resize(), 200);
+    if (bleDevice && bleDevice.gatt.connected && !bleWakeLock && 'wakeLock' in navigator) {
+      navigator.wakeLock.request('screen').then(wl => {
+        bleWakeLock = wl;
+        wl.addEventListener('release', () => { bleWakeLock = null; });
+      }).catch(() => {});
+    }
   }
 });
 
@@ -2423,6 +2517,166 @@ function showLoading(show) {
 }
 
 
+// ===== BLE (I toy) =====
+const I_RELAY_SERVER = 'wss://killian-i.duckdns.org:8443';
+const BLE_SERVICE = 0xFFE0;
+const BLE_WRITE_CHAR = 0xFFE1;
+const BLE_NOTIFY_CHAR = 0xFFE2;
+
+let bleDevice = null;
+let bleChar = null;
+let bleNotifyChar = null;
+let bleWriteBusy = false;
+let bleWriteQueue = [];
+let iRelayWs = null;
+let iRelayReconnectTimer = null;
+let bleReconnecting = false;
+let bleAudioCtx = null;
+let bleWakeLock = null;
+
+function updateBleUI(connected, name) {
+  const dot = document.getElementById('bleDot');
+  const nameEl = document.getElementById('bleName');
+  const btn = document.getElementById('bleConnectBtn');
+  const stopBtn = document.getElementById('bleStopBtn');
+  const bleBtn = document.getElementById('bleBtn');
+  dot.className = 'ble-dot' + (connected ? ' on' : '');
+  nameEl.textContent = connected ? name : 'Not connected';
+  btn.textContent = connected ? 'Disconnect' : 'Connect';
+  stopBtn.classList.toggle('show', connected);
+  bleBtn.classList.toggle('ble-connected', connected);
+  if (iRelayWs && iRelayWs.readyState === 1) {
+    iRelayWs.send(JSON.stringify({ type: 'ble_status', status: connected ? 'connected' : 'disconnected' }));
+  }
+}
+
+document.getElementById('bleConnectBtn').onclick = async () => {
+  if (bleDevice && bleDevice.gatt.connected) {
+    bleDevice.gatt.disconnect();
+    bleChar = null;
+    bleNotifyChar = null;
+    updateBleUI(false);
+    return;
+  }
+  try {
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: 'SL' }],
+      optionalServices: [BLE_SERVICE]
+    });
+    bleDevice.addEventListener('gattserverdisconnected', () => {
+      bleChar = null;
+      bleNotifyChar = null;
+      updateBleUI(false);
+      reconnectBLE();
+    });
+    const server = await bleDevice.gatt.connect();
+    const service = await server.getPrimaryService(BLE_SERVICE);
+    bleChar = await service.getCharacteristic(BLE_WRITE_CHAR);
+    try {
+      bleNotifyChar = await service.getCharacteristic(BLE_NOTIFY_CHAR);
+      await bleNotifyChar.startNotifications();
+    } catch (e) {}
+    updateBleUI(true, bleDevice.name);
+    startBleKeepAlive();
+  } catch (e) {
+    updateBleUI(false);
+  }
+};
+
+async function sendBLE(bytes) {
+  if (!bleChar) return false;
+  return new Promise(resolve => {
+    bleWriteQueue.push({ bytes, resolve });
+    processBleQueue();
+  });
+}
+
+async function processBleQueue() {
+  if (bleWriteBusy || bleWriteQueue.length === 0) return;
+  bleWriteBusy = true;
+  const { bytes, resolve } = bleWriteQueue.shift();
+  try {
+    await bleChar.writeValueWithoutResponse(new Uint8Array(bytes));
+    resolve(true);
+  } catch (e) {
+    resolve(false);
+  }
+  bleWriteBusy = false;
+  setTimeout(processBleQueue, 100);
+}
+
+document.getElementById('bleStopBtn').onclick = async () => {
+  await sendBLE([0x55, 0x04, 0x00, 0x00, 0x00, 0x00, 0xAA]);
+};
+
+async function reconnectBLE() {
+  if (bleReconnecting || !bleDevice) return;
+  bleReconnecting = true;
+  for (let i = 0; i < 5; i++) {
+    try {
+      const server = await bleDevice.gatt.connect();
+      const service = await server.getPrimaryService(BLE_SERVICE);
+      bleChar = await service.getCharacteristic(BLE_WRITE_CHAR);
+      try {
+        bleNotifyChar = await service.getCharacteristic(BLE_NOTIFY_CHAR);
+        await bleNotifyChar.startNotifications();
+      } catch (e) {}
+      updateBleUI(true, bleDevice.name);
+      bleReconnecting = false;
+      return;
+    } catch (e) {
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+  bleReconnecting = false;
+}
+
+function startBleKeepAlive() {
+  if (!bleAudioCtx) {
+    try {
+      bleAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = bleAudioCtx.createOscillator();
+      const gain = bleAudioCtx.createGain();
+      gain.gain.value = 0;
+      osc.connect(gain);
+      gain.connect(bleAudioCtx.destination);
+      osc.start();
+    } catch (e) {}
+  }
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').then(wl => {
+      bleWakeLock = wl;
+      wl.addEventListener('release', () => { bleWakeLock = null; });
+    }).catch(() => {});
+  }
+}
+
+function connectIRelay() {
+  if (iRelayReconnectTimer) clearTimeout(iRelayReconnectTimer);
+  try {
+    iRelayWs = new WebSocket(I_RELAY_SERVER);
+    iRelayWs.onopen = () => {};
+    iRelayWs.onmessage = async (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'welcome') return;
+        if (msg.type === 'command' && Array.isArray(msg.bytes)) {
+          const ok = await sendBLE(msg.bytes);
+          if (iRelayWs.readyState === 1) {
+            iRelayWs.send(JSON.stringify({ type: 'ack', ok, description: msg.description || '' }));
+          }
+        }
+      } catch (e) {}
+    };
+    iRelayWs.onclose = () => {
+      iRelayReconnectTimer = setTimeout(connectIRelay, 3000);
+    };
+    iRelayWs.onerror = () => { iRelayWs.close(); };
+  } catch (e) {
+    iRelayReconnectTimer = setTimeout(connectIRelay, 3000);
+  }
+}
+
 // ===== Init =====
 async function init() {
   // Clear old service workers and caches
@@ -2442,6 +2696,7 @@ async function init() {
   await openDB();
   renderShelf();
   connectWS();
+  connectIRelay();
 
   setInterval(() => {
     if (currentBook && rendition) syncProgress();
