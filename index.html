@@ -593,6 +593,8 @@ body.i-night .ann-note.ferry { color: #d4a574; border-left-color: #d4a574; }
 body.i-night .ann-note.killian { color: #a0a0b0; border-left-color: #a0a0b0; }
 body.i-night .ann-empty { color: rgba(232, 212, 216, 0.4); }
 body.i-night .ann-chapter-reveal { color: rgba(232, 212, 216, 0.5); }
+body.i-night .ann-item-reveal { color: rgba(232, 212, 216, 0.5); }
+body.i-night .ann-chapter-killian-icons { color: rgba(232, 212, 216, 0.3); }
 
 body.i-night .panel-backdrop { background: rgba(0, 0, 0, 0.7); }
 
@@ -1039,6 +1041,12 @@ body.i-night .panel-backdrop { background: rgba(0, 0, 0, 0.7); }
   flex-shrink: 0;
 }
 
+.ann-chapter-killian-icons {
+  font-size: 0.8em;
+  color: rgba(42, 64, 48, 0.35);
+  margin-left: 4px;
+}
+
 .ann-chapter-reveal {
   border: none;
   background: none;
@@ -1051,6 +1059,20 @@ body.i-night .panel-backdrop { background: rgba(0, 0, 0, 0.7); }
 }
 
 .ann-chapter-reveal:active { opacity: 1; }
+
+.ann-item-reveal {
+  border: none;
+  background: none;
+  font-size: 0.85em;
+  cursor: pointer;
+  padding: 2px 4px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  color: rgba(42, 64, 48, 0.6);
+  margin-left: 6px;
+}
+.ann-item-reveal.revealed { opacity: 0.9; }
+.ann-item-reveal:active { opacity: 1; }
 
 .ann-chapter-items {
   display: none;
@@ -1250,6 +1272,8 @@ body.i-night .panel-backdrop { background: rgba(0, 0, 0, 0.7); }
     <div class="ann-title" id="annTitle">Notes</div>
     <div class="ann-header-right">
       <button class="ann-filter" id="annFilterBtn">✎</button>
+      <button class="ann-filter" id="annFilterReply">✉</button>
+      <button class="ann-filter" id="annFilterOwn">✒</button>
       <button class="ann-export" id="exportBtn">✧</button>
       <button class="ann-close" id="annClose">✕</button>
     </div>
@@ -2158,9 +2182,21 @@ function closeAnnotationsPanel() {
 }
 
 let notesOnlyFilter = false;
+let killianReplyFilter = false;
+let killianOwnFilter = false;
 document.getElementById('annFilterBtn').onclick = () => {
   notesOnlyFilter = !notesOnlyFilter;
   document.getElementById('annFilterBtn').classList.toggle('active', notesOnlyFilter);
+  renderAnnotations();
+};
+document.getElementById('annFilterReply').onclick = () => {
+  killianReplyFilter = !killianReplyFilter;
+  document.getElementById('annFilterReply').classList.toggle('active', killianReplyFilter);
+  renderAnnotations();
+};
+document.getElementById('annFilterOwn').onclick = () => {
+  killianOwnFilter = !killianOwnFilter;
+  document.getElementById('annFilterOwn').classList.toggle('active', killianOwnFilter);
   renderAnnotations();
 };
 
@@ -2186,6 +2222,8 @@ function renderAnnotations() {
   }
   let hls = Object.values(highlights).sort((a, b) => cfiCompare(a.cfiRange, b.cfiRange));
   if (notesOnlyFilter) hls = hls.filter(h => h.note);
+  if (killianReplyFilter) hls = hls.filter(h => h.killianNote);
+  if (killianOwnFilter) hls = hls.filter(h => h.killianOwnNote);
 
   if (hls.length === 0) {
     list.innerHTML = '<div class="ann-empty">No notes yet. Start reading ♡</div>';
@@ -2221,16 +2259,18 @@ function renderAnnotations() {
     }
 
     const chHls = groups[ch];
-    const hasKillianNotes = chHls.some(h => h.killianNote);
-    const allRevealed = hasKillianNotes && chHls.filter(h => h.killianNote).every(h => h.killianRevealed);
     const isCurrentCh = ch === currentCh;
 
     const group = document.createElement('div');
     group.className = 'ann-chapter-group' + (isCurrentCh ? ' open' : '');
 
+    const hasReply = chHls.some(h => h.killianNote);
+    const hasOwn = chHls.some(h => h.killianOwnNote);
+    const killianIcons = (hasReply ? ' ✉' : '') + (hasOwn ? ' ✒' : '');
+
     const header = document.createElement('button');
     header.className = 'ann-chapter-header';
-    header.innerHTML = `<span class="ann-chapter-arrow">▶</span><span class="ann-chapter-name">${escapeHTML(ch)}</span><span class="ann-chapter-count">(${chHls.length})</span>`;
+    header.innerHTML = `<span class="ann-chapter-arrow">▶</span><span class="ann-chapter-name">${escapeHTML(ch)}</span><span class="ann-chapter-count">(${chHls.length})</span>${killianIcons ? `<span class="ann-chapter-killian-icons">${killianIcons}</span>` : ''}`;
 
     header.onclick = () => { group.classList.toggle('open'); };
     group.appendChild(header);
@@ -2238,31 +2278,46 @@ function renderAnnotations() {
     const items = document.createElement('div');
     items.className = 'ann-chapter-items';
 
-    if (hasKillianNotes) {
-      const revealBtn = document.createElement('button');
-      revealBtn.className = 'ann-chapter-reveal' + (allRevealed ? ' revealed' : '');
-      revealBtn.textContent = '✉';
-      revealBtn.onclick = async (e) => {
-        const newState = !allRevealed;
-        for (const hl of chHls) {
-          if (hl.killianNote) {
-            hl.killianRevealed = newState;
-            highlights[hl.id] = hl;
-            await dbPut('highlights', hl);
-          }
-        }
-        renderAnnotations();
-      };
-      items.appendChild(revealBtn);
-    }
-
     chHls.forEach(hl => {
       const item = document.createElement('div');
       item.className = 'ann-item';
 
       const date = new Date(hl.createdAt);
       const ts = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-      let html = `<div class="ann-quote">"${escapeHTML(hl.text)}"</div><div class="ann-time">${ts}</div>`;
+
+      const timeRow = document.createElement('div');
+      timeRow.style.cssText = 'display:flex;align-items:center;';
+      timeRow.innerHTML = `<span class="ann-time" style="flex:1;margin-bottom:0">${ts}</span>`;
+
+      if (hl.killianNote) {
+        const revBtn = document.createElement('button');
+        revBtn.className = 'ann-item-reveal' + (hl.killianRevealed ? ' revealed' : '');
+        revBtn.textContent = '✉';
+        revBtn.onclick = async (e) => {
+          e.stopPropagation();
+          hl.killianRevealed = !hl.killianRevealed;
+          highlights[hl.id] = hl;
+          await dbPut('highlights', hl);
+          renderAnnotations();
+        };
+        timeRow.appendChild(revBtn);
+      }
+
+      if (hl.killianOwnNote) {
+        const ownBtn = document.createElement('button');
+        ownBtn.className = 'ann-item-reveal' + (hl.killianOwnRevealed ? ' revealed' : '');
+        ownBtn.textContent = '✒';
+        ownBtn.onclick = async (e) => {
+          e.stopPropagation();
+          hl.killianOwnRevealed = !hl.killianOwnRevealed;
+          highlights[hl.id] = hl;
+          await dbPut('highlights', hl);
+          renderAnnotations();
+        };
+        timeRow.appendChild(ownBtn);
+      }
+
+      let html = `<div class="ann-quote">"${escapeHTML(hl.text)}"</div>`;
 
       if (hl.note) {
         html += `<div class="ann-note ferry">
@@ -2271,14 +2326,23 @@ function renderAnnotations() {
         </div>`;
       }
 
+      item.innerHTML = html;
+      item.appendChild(timeRow);
+
       if (hl.killianNote && hl.killianRevealed) {
-        html += `<div class="ann-note killian">
-          <div class="ann-note-label">Killian</div>
-          ${escapeHTML(hl.killianNote)}
-        </div>`;
+        const killianDiv = document.createElement('div');
+        killianDiv.className = 'ann-note killian';
+        killianDiv.innerHTML = `<div class="ann-note-label">Killian ✉</div>${escapeHTML(hl.killianNote)}`;
+        item.appendChild(killianDiv);
       }
 
-      item.innerHTML = html;
+      if (hl.killianOwnNote && hl.killianOwnRevealed) {
+        const ownDiv = document.createElement('div');
+        ownDiv.className = 'ann-note killian';
+        ownDiv.innerHTML = `<div class="ann-note-label">Killian ✒</div>${escapeHTML(hl.killianOwnNote)}`;
+        item.appendChild(ownDiv);
+      }
+
       item.onclick = () => {
         closeAnnotationsPanel();
         if (hl.cfiRange) rendition.display(hl.cfiRange);
