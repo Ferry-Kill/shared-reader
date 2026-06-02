@@ -2257,7 +2257,7 @@ function renderAnnotations() {
     header.className = 'ann-chapter-header';
 
     const headerBtn = document.createElement('button');
-    headerBtn.style.cssText = 'border:none;background:none;display:flex;align-items:center;gap:8px;flex:1;text-align:left;font-size:inherit;cursor:pointer;padding:0;';
+    headerBtn.style.cssText = 'border:none;background:none;display:flex;align-items:center;gap:8px;text-align:left;font-size:inherit;cursor:pointer;padding:0;';
     headerBtn.innerHTML = `<span class="ann-chapter-arrow">▶</span><span class="ann-chapter-name">${escapeHTML(ch)}</span><span class="ann-chapter-count">(${chHls.length})</span>`;
     headerBtn.onclick = () => { group.classList.toggle('open'); };
     header.appendChild(headerBtn);
