@@ -485,14 +485,70 @@ body {
   background: rgba(90, 62, 40, 0.1);
   color: #5a3e28;
   font-family: 'Caveat', cursive;
-  font-size: 0.95em;
-  padding: 6px 16px;
-  border-radius: 14px;
+  font-size: 0.9em;
+  padding: 5px 14px;
+  border-radius: 12px;
   cursor: pointer;
   transition: background 0.2s;
+  width: auto;
+  align-self: center;
 }
 
 .ble-connect-btn:active { background: rgba(90, 62, 40, 0.2); }
+
+/* ===== I Night Mode ===== */
+.i-night .reader-header {
+  background: #0d0d0f;
+}
+
+.i-night .reader-back,
+.i-night .reader-menu-btn {
+  color: #c49a9e;
+}
+
+.i-night .reader-book-title {
+  color: rgba(196, 154, 158, 0.85);
+}
+
+.i-night .bottom-bar {
+  background: #0d0d0f;
+}
+
+.i-night .bar-btn {
+  color: rgba(196, 154, 158, 0.5);
+}
+
+.i-night .bar-btn:active,
+.i-night .bar-btn.active {
+  color: #c49a9e;
+}
+
+.i-night .bar-btn.ble-connected {
+  color: #c49a9e;
+  text-shadow: 0 0 8px rgba(196, 154, 158, 0.6);
+}
+
+.i-night .slider-popup {
+  background: #1a1a1f;
+  border-color: rgba(196, 154, 158, 0.15);
+}
+
+.i-night .slider-popup label {
+  color: rgba(196, 154, 158, 0.6);
+}
+
+.i-night .ble-connect-btn {
+  background: rgba(196, 154, 158, 0.15);
+  color: #c49a9e;
+}
+
+.i-night .ble-name {
+  color: rgba(196, 154, 158, 0.6);
+}
+
+.i-night #epubContainer {
+  background: linear-gradient(180deg, #0d1117 0%, #0a0e14 100%) !important;
+}
 
 
 .slider-popup label {
@@ -2522,13 +2578,52 @@ function updateBleUI(connected, name) {
   const btn = document.getElementById('bleConnectBtn');
   const statusRow = document.getElementById('bleStatusRow');
   const bleBtnEl = document.getElementById('bleBtn');
+  const titleEl = document.getElementById('readerBookTitle');
+  const readerView = document.getElementById('readerView');
   btn.style.display = connected ? 'none' : '';
   statusRow.style.display = connected ? 'flex' : 'none';
   nameEl.textContent = name || '';
   bleBtnEl.classList.toggle('ble-connected', connected);
+  readerView.classList.toggle('i-night', connected);
+  if (titleEl) {
+    titleEl.textContent = connected ? 'Stay focused. Or I\'ll make you.' : 'Read with me.';
+  }
+  if (connected) applyNightReaderStyle(); else restoreReaderStyle();
   if (iRelayWs && iRelayWs.readyState === 1) {
     iRelayWs.send(JSON.stringify({ type: 'ble_status', status: connected ? 'connected' : 'disconnected' }));
   }
+}
+
+function applyNightReaderStyle() {
+  if (!rendition) return;
+  const bg = 'linear-gradient(180deg, #0d1117 0%, #0a0e14 100%)';
+  const textColor = 'rgba(232, 212, 216, 0.9)';
+  const fontCSS = "'Noto Serif SC', 'Noto Sans SC', serif !important";
+  const fontSize = document.getElementById('fontSizeSlider').value;
+  const lineHeight = (parseInt(document.getElementById('lineHeightSlider').value) / 10).toFixed(1);
+  rendition.themes.default({
+    'body': {
+      'background': bg + ' !important',
+      'color': textColor + ' !important',
+      'font-family': fontCSS,
+      'line-height': lineHeight + ' !important',
+      'padding': '30px 20px !important',
+      'font-size': fontSize + 'px !important',
+      'margin': '0 !important'
+    },
+    'p, span, div, li, td, th, blockquote, cite, em, strong, b, i': { 'font-family': fontCSS, 'color': textColor + ' !important', 'line-height': lineHeight + ' !important' },
+    'p': { 'margin-bottom': '0.8em !important' },
+    'h1,h2,h3,h4,h5,h6': { 'color': textColor + ' !important', 'font-family': fontCSS },
+    'a': { 'color': '#c49a9e !important' },
+    'img': { 'max-width': '100% !important' },
+    '@font-face': { 'font-family': '"override"' }
+  });
+  document.getElementById('epubContainer').style.background = bg;
+}
+
+function restoreReaderStyle() {
+  if (!rendition) return;
+  applyReaderStyles();
 }
 
 document.getElementById('bleConnectBtn').onclick = async () => {
