@@ -2239,19 +2239,8 @@ function renderAnnotations() {
     }
     return 0;
   }
-  // Build map of Killian own notes that overlap with Ferry highlights
-  const killianOverlapNotes = {};
-  const ferryCfiRanges = new Set();
-  Object.values(highlights).forEach(h => { if (h.owner !== 'killian') ferryCfiRanges.add(h.cfiRange); });
-  Object.values(highlights).forEach(h => {
-    if (h.owner === 'killian' && h.killianOwnNote && ferryCfiRanges.has(h.cfiRange)) {
-      killianOverlapNotes[h.cfiRange] = h.killianOwnNote;
-    }
-  });
-
   let hls = Object.values(highlights).sort((a, b) => cfiCompare(a.cfiRange, b.cfiRange));
-  // Hide Killian items that overlap with Ferry (their notes show on Ferry's items instead)
-  if (!killianOwnFilter) hls = hls.filter(h => h.owner !== 'killian' || (chapterOwnFilter[h.chapter] && !ferryCfiRanges.has(h.cfiRange)));
+  if (!killianOwnFilter) hls = hls.filter(h => h.owner !== 'killian' || chapterOwnFilter[h.chapter]);
   if (notesOnlyFilter) hls = hls.filter(h => h.note);
   if (killianReplyFilter) hls = hls.filter(h => h.killianNote);
   if (killianOwnFilter) hls = hls.filter(h => h.killianOwnNote);
@@ -2387,17 +2376,6 @@ function renderAnnotations() {
           <div class="ann-note-label">Killian ✒</div>
           ${escapeHTML(hl.killianOwnNote)}
         </div>`;
-      }
-
-      // Show overlapping Killian note on Ferry's item
-      if (hl.owner !== 'killian' && killianOverlapNotes[hl.cfiRange]) {
-        const overlapRevealed = Object.values(highlights).some(h => h.owner === 'killian' && h.cfiRange === hl.cfiRange && h.killianOwnRevealed);
-        if (overlapRevealed || chapterOwnFilter[hl.chapter] || killianOwnFilter) {
-          html += `<div class="ann-note killian">
-            <div class="ann-note-label">Killian ✒</div>
-            ${escapeHTML(killianOverlapNotes[hl.cfiRange])}
-          </div>`;
-        }
       }
 
       item.innerHTML = html;
