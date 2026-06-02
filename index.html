@@ -593,7 +593,6 @@ body.i-night .ann-note.ferry { color: #d4a574; border-left-color: #d4a574; }
 body.i-night .ann-note.killian { color: #a0a0b0; border-left-color: #a0a0b0; }
 body.i-night .ann-empty { color: rgba(232, 212, 216, 0.4); }
 body.i-night .ann-chapter-reveal { color: rgba(232, 212, 216, 0.5); }
-body.i-night .ann-item-reveal { color: rgba(232, 212, 216, 0.5); }
 body.i-night .ann-chapter-killian-icons { color: rgba(232, 212, 216, 0.3); }
 
 body.i-night .panel-backdrop { background: rgba(0, 0, 0, 0.7); }
@@ -1008,12 +1007,8 @@ body.i-night .panel-backdrop { background: rgba(0, 0, 0, 0.7); }
   display: flex;
   align-items: center;
   padding: 10px 0;
-  cursor: pointer;
-  border: none;
-  background: none;
   width: 100%;
-  text-align: left;
-  gap: 8px;
+  gap: 4px;
   font-size: inherit;
 }
 
@@ -1041,6 +1036,8 @@ body.i-night .panel-backdrop { background: rgba(0, 0, 0, 0.7); }
   flex-shrink: 0;
 }
 
+.ann-chapter-reveal.revealed { opacity: 0.9; }
+
 .ann-chapter-killian-icons {
   font-size: 0.8em;
   color: rgba(42, 64, 48, 0.35);
@@ -1060,19 +1057,6 @@ body.i-night .panel-backdrop { background: rgba(0, 0, 0, 0.7); }
 
 .ann-chapter-reveal:active { opacity: 1; }
 
-.ann-item-reveal {
-  border: none;
-  background: none;
-  font-size: 0.85em;
-  cursor: pointer;
-  padding: 2px 4px;
-  opacity: 0.5;
-  transition: opacity 0.2s;
-  color: rgba(42, 64, 48, 0.6);
-  margin-left: 6px;
-}
-.ann-item-reveal.revealed { opacity: 0.9; }
-.ann-item-reveal:active { opacity: 1; }
 
 .ann-chapter-items {
   display: none;
@@ -2266,13 +2250,57 @@ function renderAnnotations() {
 
     const hasReply = chHls.some(h => h.killianNote);
     const hasOwn = chHls.some(h => h.killianOwnNote);
-    const killianIcons = (hasReply ? ' ✉' : '') + (hasOwn ? ' ✒' : '');
+    const allReplyRevealed = hasReply && chHls.filter(h => h.killianNote).every(h => h.killianRevealed);
+    const allOwnRevealed = hasOwn && chHls.filter(h => h.killianOwnNote).every(h => h.killianOwnRevealed);
 
-    const header = document.createElement('button');
+    const header = document.createElement('div');
     header.className = 'ann-chapter-header';
-    header.innerHTML = `<span class="ann-chapter-arrow">▶</span><span class="ann-chapter-name">${escapeHTML(ch)}</span><span class="ann-chapter-count">(${chHls.length})</span>${killianIcons ? `<span class="ann-chapter-killian-icons">${killianIcons}</span>` : ''}`;
 
-    header.onclick = () => { group.classList.toggle('open'); };
+    const headerBtn = document.createElement('button');
+    headerBtn.style.cssText = 'border:none;background:none;display:flex;align-items:center;gap:8px;flex:1;text-align:left;font-size:inherit;cursor:pointer;padding:0;';
+    headerBtn.innerHTML = `<span class="ann-chapter-arrow">▶</span><span class="ann-chapter-name">${escapeHTML(ch)}</span><span class="ann-chapter-count">(${chHls.length})</span>`;
+    headerBtn.onclick = () => { group.classList.toggle('open'); };
+    header.appendChild(headerBtn);
+
+    if (hasReply) {
+      const revBtn = document.createElement('button');
+      revBtn.className = 'ann-chapter-reveal' + (allReplyRevealed ? ' revealed' : '');
+      revBtn.textContent = '✉';
+      revBtn.onclick = async (e) => {
+        e.stopPropagation();
+        const newState = !allReplyRevealed;
+        for (const hl of chHls) {
+          if (hl.killianNote) {
+            hl.killianRevealed = newState;
+            highlights[hl.id] = hl;
+            await dbPut('highlights', hl);
+          }
+        }
+        renderAnnotations();
+      };
+      header.appendChild(revBtn);
+    }
+
+    if (hasOwn) {
+      const ownBtn = document.createElement('button');
+      ownBtn.className = 'ann-chapter-reveal' + (allOwnRevealed ? ' revealed' : '');
+      ownBtn.textContent = '✒';
+      ownBtn.style.fontSize = '0.85em';
+      ownBtn.onclick = async (e) => {
+        e.stopPropagation();
+        const newState = !allOwnRevealed;
+        for (const hl of chHls) {
+          if (hl.killianOwnNote) {
+            hl.killianOwnRevealed = newState;
+            highlights[hl.id] = hl;
+            await dbPut('highlights', hl);
+          }
+        }
+        renderAnnotations();
+      };
+      header.appendChild(ownBtn);
+    }
+
     group.appendChild(header);
 
     const items = document.createElement('div');
@@ -2284,40 +2312,7 @@ function renderAnnotations() {
 
       const date = new Date(hl.createdAt);
       const ts = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-
-      const timeRow = document.createElement('div');
-      timeRow.style.cssText = 'display:flex;align-items:center;';
-      timeRow.innerHTML = `<span class="ann-time" style="flex:1;margin-bottom:0">${ts}</span>`;
-
-      if (hl.killianNote) {
-        const revBtn = document.createElement('button');
-        revBtn.className = 'ann-item-reveal' + (hl.killianRevealed ? ' revealed' : '');
-        revBtn.textContent = '✉';
-        revBtn.onclick = async (e) => {
-          e.stopPropagation();
-          hl.killianRevealed = !hl.killianRevealed;
-          highlights[hl.id] = hl;
-          await dbPut('highlights', hl);
-          renderAnnotations();
-        };
-        timeRow.appendChild(revBtn);
-      }
-
-      if (hl.killianOwnNote) {
-        const ownBtn = document.createElement('button');
-        ownBtn.className = 'ann-item-reveal' + (hl.killianOwnRevealed ? ' revealed' : '');
-        ownBtn.textContent = '✒';
-        ownBtn.onclick = async (e) => {
-          e.stopPropagation();
-          hl.killianOwnRevealed = !hl.killianOwnRevealed;
-          highlights[hl.id] = hl;
-          await dbPut('highlights', hl);
-          renderAnnotations();
-        };
-        timeRow.appendChild(ownBtn);
-      }
-
-      let html = `<div class="ann-quote">"${escapeHTML(hl.text)}"</div>`;
+      let html = `<div class="ann-quote">"${escapeHTML(hl.text)}"</div><div class="ann-time">${ts}</div>`;
 
       if (hl.note) {
         html += `<div class="ann-note ferry">
@@ -2326,23 +2321,21 @@ function renderAnnotations() {
         </div>`;
       }
 
-      item.innerHTML = html;
-      item.appendChild(timeRow);
-
       if (hl.killianNote && hl.killianRevealed) {
-        const killianDiv = document.createElement('div');
-        killianDiv.className = 'ann-note killian';
-        killianDiv.innerHTML = `<div class="ann-note-label">Killian ✉</div>${escapeHTML(hl.killianNote)}`;
-        item.appendChild(killianDiv);
+        html += `<div class="ann-note killian">
+          <div class="ann-note-label">Killian ✉</div>
+          ${escapeHTML(hl.killianNote)}
+        </div>`;
       }
 
       if (hl.killianOwnNote && hl.killianOwnRevealed) {
-        const ownDiv = document.createElement('div');
-        ownDiv.className = 'ann-note killian';
-        ownDiv.innerHTML = `<div class="ann-note-label">Killian ✒</div>${escapeHTML(hl.killianOwnNote)}`;
-        item.appendChild(ownDiv);
+        html += `<div class="ann-note killian">
+          <div class="ann-note-label">Killian ✒</div>
+          ${escapeHTML(hl.killianOwnNote)}
+        </div>`;
       }
 
+      item.innerHTML = html;
       item.onclick = () => {
         closeAnnotationsPanel();
         if (hl.cfiRange) rendition.display(hl.cfiRange);
