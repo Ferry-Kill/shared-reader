@@ -494,22 +494,6 @@ body {
 
 .ble-connect-btn:active { background: rgba(90, 62, 40, 0.2); }
 
-.ble-stop-btn {
-  border: none;
-  background: rgba(200, 60, 60, 0.15);
-  color: rgba(200, 60, 60, 0.8);
-  font-family: 'Caveat', cursive;
-  font-size: 0.95em;
-  padding: 8px 0;
-  border-radius: 14px;
-  cursor: pointer;
-  width: 100%;
-  transition: background 0.2s;
-  display: none;
-}
-
-.ble-stop-btn.show { display: block; }
-.ble-stop-btn:active { background: rgba(200, 60, 60, 0.3); }
 
 .slider-popup label {
   font-family: 'Caveat', cursive;
@@ -1121,12 +1105,11 @@ body {
 
   <!-- BLE panel -->
   <div class="slider-popup ble-popup" id="blePopup">
-    <div class="ble-status-row">
-      <span class="ble-dot" id="bleDot"></span>
-      <span class="ble-name" id="bleName">Not connected</span>
-      <button class="ble-connect-btn" id="bleConnectBtn">Connect</button>
+    <button class="ble-connect-btn" id="bleConnectBtn">Connect</button>
+    <div class="ble-status-row" id="bleStatusRow" style="display:none">
+      <span class="ble-dot on"></span>
+      <span class="ble-name" id="bleName"></span>
     </div>
-    <button class="ble-stop-btn" id="bleStopBtn">Stop All</button>
   </div>
 </div>
 
@@ -2535,29 +2518,21 @@ let bleAudioCtx = null;
 let bleWakeLock = null;
 
 function updateBleUI(connected, name) {
-  const dot = document.getElementById('bleDot');
   const nameEl = document.getElementById('bleName');
   const btn = document.getElementById('bleConnectBtn');
-  const stopBtn = document.getElementById('bleStopBtn');
-  const bleBtn = document.getElementById('bleBtn');
-  dot.className = 'ble-dot' + (connected ? ' on' : '');
-  nameEl.textContent = connected ? name : 'Not connected';
-  btn.textContent = connected ? 'Disconnect' : 'Connect';
-  stopBtn.classList.toggle('show', connected);
-  bleBtn.classList.toggle('ble-connected', connected);
+  const statusRow = document.getElementById('bleStatusRow');
+  const bleBtnEl = document.getElementById('bleBtn');
+  btn.style.display = connected ? 'none' : '';
+  statusRow.style.display = connected ? 'flex' : 'none';
+  nameEl.textContent = name || '';
+  bleBtnEl.classList.toggle('ble-connected', connected);
   if (iRelayWs && iRelayWs.readyState === 1) {
     iRelayWs.send(JSON.stringify({ type: 'ble_status', status: connected ? 'connected' : 'disconnected' }));
   }
 }
 
 document.getElementById('bleConnectBtn').onclick = async () => {
-  if (bleDevice && bleDevice.gatt.connected) {
-    bleDevice.gatt.disconnect();
-    bleChar = null;
-    bleNotifyChar = null;
-    updateBleUI(false);
-    return;
-  }
+  if (bleDevice && bleDevice.gatt.connected) return;
   try {
     bleDevice = await navigator.bluetooth.requestDevice({
       filters: [{ namePrefix: 'SL' }],
@@ -2604,10 +2579,6 @@ async function processBleQueue() {
   bleWriteBusy = false;
   setTimeout(processBleQueue, 100);
 }
-
-document.getElementById('bleStopBtn').onclick = async () => {
-  await sendBLE([0x55, 0x04, 0x00, 0x00, 0x00, 0x00, 0xAA]);
-};
 
 async function reconnectBLE() {
   if (bleReconnecting || !bleDevice) return;
