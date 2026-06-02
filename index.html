@@ -1592,6 +1592,7 @@ async function openBook(bookId) {
     await loadHighlights(bookId);
     fetchKillianAnnotations(bookId).catch(() => {});
     fetchKillianHighlights(bookId).catch(() => {});
+    syncAllHighlights();
     updateNotesCount();
     startReadingTimer();
 
@@ -2518,6 +2519,23 @@ async function fetchKillianHighlights(bookId) {
     }
     if (changed) reapplyAllHighlights();
   } catch (e) {}
+}
+
+function syncAllHighlights() {
+  if (!ws || ws.readyState !== 1 || !currentBook) return;
+  const ferryHls = Object.values(highlights).filter(h => h.owner === 'ferry');
+  for (const hl of ferryHls) {
+    ws.send(JSON.stringify({
+      type: 'highlight',
+      bookId: hl.bookId,
+      highlightId: hl.id,
+      text: hl.text,
+      note: hl.note,
+      cfiRange: hl.cfiRange,
+      chapter: hl.chapter,
+      timestamp: hl.createdAt
+    }));
+  }
 }
 
 function syncHighlight(hl) {
