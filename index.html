@@ -2190,6 +2190,7 @@ function closeAnnotationsPanel() {
 let notesOnlyFilter = false;
 let killianReplyFilter = false;
 let killianOwnFilter = false;
+const chapterOwnFilter = {};
 document.getElementById('annFilterBtn').onclick = () => {
   notesOnlyFilter = !notesOnlyFilter;
   document.getElementById('annFilterBtn').classList.toggle('active', notesOnlyFilter);
@@ -2306,20 +2307,23 @@ function renderAnnotations() {
 
     if (hasOwn) {
       const ownBtn = document.createElement('button');
-      ownBtn.className = 'ann-chapter-reveal' + (allOwnRevealed ? ' revealed' : '');
+      const ownActive = !!chapterOwnFilter[ch];
+      ownBtn.className = 'ann-chapter-reveal' + (ownActive ? ' revealed' : '');
       ownBtn.textContent = '✒';
       ownBtn.style.fontSize = '0.75em';
       ownBtn.onclick = async (e) => {
         e.stopPropagation();
-        const newState = !allOwnRevealed;
-        for (const hl of chHls) {
-          if (hl.killianOwnNote) {
-            hl.killianOwnRevealed = newState;
-            highlights[hl.id] = hl;
-            await dbPut('highlights', hl);
+        chapterOwnFilter[ch] = !chapterOwnFilter[ch];
+        if (chapterOwnFilter[ch]) {
+          for (const hl of chHls) {
+            if (hl.killianOwnNote && !hl.killianOwnRevealed) {
+              hl.killianOwnRevealed = true;
+              highlights[hl.id] = hl;
+              await dbPut('highlights', hl);
+            }
           }
+          reapplyAllHighlights();
         }
-        reapplyAllHighlights();
         renderAnnotations();
       };
       header.appendChild(ownBtn);
@@ -2330,7 +2334,8 @@ function renderAnnotations() {
     const items = document.createElement('div');
     items.className = 'ann-chapter-items';
 
-    chHls.forEach(hl => {
+    const filteredHls = chapterOwnFilter[ch] ? chHls.filter(h => h.killianOwnNote) : chHls;
+    filteredHls.forEach(hl => {
       const item = document.createElement('div');
       item.className = 'ann-item';
 
