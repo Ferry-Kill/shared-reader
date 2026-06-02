@@ -1981,8 +1981,12 @@ function reapplyAllHighlights() {
   for (const id in highlights) {
     try { rendition.annotations.remove(highlights[id].cfiRange, 'highlight'); } catch(e) {}
   }
+  const applied = new Set();
   for (const id in highlights) {
-    applyHighlight(highlights[id]);
+    const hl = highlights[id];
+    if (applied.has(hl.cfiRange)) continue;
+    applyHighlight(hl);
+    applied.add(hl.cfiRange);
   }
 }
 
@@ -2350,10 +2354,10 @@ function renderAnnotations() {
       const ts = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
       let html = `<div class="ann-quote">"${escapeHTML(hl.text)}"</div><div class="ann-time">${ts}</div>`;
 
-      if (hl.note) {
+      if (hl.owner !== 'killian') {
         html += `<div class="ann-note ferry">
           <div class="ann-note-label">Ferry</div>
-          ${escapeHTML(hl.note)}
+          ${hl.note ? escapeHTML(hl.note) : '<span style="opacity:0.4;font-style:italic">—</span>'}
         </div>`;
       }
 
