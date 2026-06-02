@@ -2288,7 +2288,7 @@ function renderAnnotations() {
       const ownBtn = document.createElement('button');
       ownBtn.className = 'ann-chapter-reveal' + (allOwnRevealed ? ' revealed' : '');
       ownBtn.textContent = '✒';
-      ownBtn.style.fontSize = '0.85em';
+      ownBtn.style.fontSize = '0.75em';
       ownBtn.onclick = async (e) => {
         e.stopPropagation();
         const newState = !allOwnRevealed;
