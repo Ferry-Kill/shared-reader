@@ -1967,6 +1967,16 @@ async function loadHighlights(bookId) {
   });
 }
 
+function reapplyAllHighlights() {
+  if (!rendition) return;
+  for (const id in highlights) {
+    try { rendition.annotations.remove(highlights[id].cfiRange, 'highlight'); } catch(e) {}
+  }
+  for (const id in highlights) {
+    applyHighlight(highlights[id]);
+  }
+}
+
 function applyHighlight(hl) {
   if (!rendition) return;
   if (hl.killianNote && !hl.killianRevealed && hl.owner !== 'ferry') return;
@@ -2279,6 +2289,7 @@ function renderAnnotations() {
             await dbPut('highlights', hl);
           }
         }
+        reapplyAllHighlights();
         renderAnnotations();
       };
       header.appendChild(revBtn);
@@ -2299,6 +2310,7 @@ function renderAnnotations() {
             await dbPut('highlights', hl);
           }
         }
+        reapplyAllHighlights();
         renderAnnotations();
       };
       header.appendChild(ownBtn);
