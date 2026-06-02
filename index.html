@@ -2034,8 +2034,10 @@ function showExistingHighlightMenu(hlId, e) {
   }
 
   activeHlMenuId = hlId;
-  selectedCfiRange = highlights[hlId]?.cfiRange;
-  selectedText = highlights[hlId]?.text;
+  const hl = highlights[hlId];
+  if (hl?.owner === 'killian') return;
+  selectedCfiRange = hl?.cfiRange;
+  selectedText = hl?.text;
   const menu = document.getElementById('highlightMenu');
   document.getElementById('hlRemove').style.display = '';
   document.getElementById('hlRemove').onclick = () => removeHighlight(hlId);
