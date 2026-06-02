@@ -2735,20 +2735,12 @@ function updateStats() {
 }
 
 function updateNotesCount() {
-  const allHL = Object.values(highlights);
   const today = new Date();
   const titleEl = document.getElementById('annTitle');
   if (!titleEl) return;
-
-  if (notesOnlyFilter) {
-    const withNotes = allHL.filter(h => h.note || h.killianOwnNote);
-    const todayNotes = withNotes.filter(h => new Date(h.createdAt).toDateString() === today.toDateString()).length;
-    titleEl.textContent = withNotes.length > 0 ? `Notes(${todayNotes}/${withNotes.length})` : 'Notes';
-  } else {
-    const total = allHL.length;
-    const todayCount = allHL.filter(h => new Date(h.createdAt).toDateString() === today.toDateString()).length;
-    titleEl.textContent = total > 0 ? `Notes(${todayCount}/${total})` : 'Notes';
-  }
+  const ferryNotes = Object.values(highlights).filter(h => h.owner === 'ferry' && h.note);
+  const todayNotes = ferryNotes.filter(h => new Date(h.createdAt).toDateString() === today.toDateString()).length;
+  titleEl.textContent = ferryNotes.length > 0 ? `Notes(${todayNotes}/${ferryNotes.length})` : 'Notes';
 }
 
 // ===== Export =====
