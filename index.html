@@ -2697,8 +2697,9 @@ function updateStats() {
   const todayMs = parseInt(localStorage.getItem(getTodayKey()) || '0') + getSessionMs();
   const totalMs = parseInt(localStorage.getItem('reading_total') || '0') + getSessionMs();
   const today = new Date();
-  const todayHL = Object.values(highlights).filter(h => new Date(h.createdAt).toDateString() === today.toDateString()).length;
-  const totalHL = Object.values(highlights).length;
+  const ferryHls = Object.values(highlights).filter(h => h.owner === 'ferry');
+  const todayHL = ferryHls.filter(h => new Date(h.createdAt).toDateString() === today.toDateString()).length;
+  const totalHL = ferryHls.length;
 
   let estTime = '';
   if (progress > 0 && totalMs > 0) {
@@ -2740,7 +2741,7 @@ function updateNotesCount() {
   if (!titleEl) return;
 
   if (notesOnlyFilter) {
-    const withNotes = allHL.filter(h => h.note);
+    const withNotes = allHL.filter(h => h.note || h.killianOwnNote);
     const todayNotes = withNotes.filter(h => new Date(h.createdAt).toDateString() === today.toDateString()).length;
     titleEl.textContent = withNotes.length > 0 ? `Notes(${todayNotes}/${withNotes.length})` : 'Notes';
   } else {
