@@ -485,21 +485,6 @@ body {
   flex: 1;
 }
 
-.ble-connect-btn {
-  border: none;
-  background: rgba(90, 62, 40, 0.1);
-  color: #5a3e28;
-  font-family: 'Caveat', cursive;
-  font-size: 0.9em;
-  padding: 5px 14px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background 0.2s;
-  width: auto;
-  align-self: center;
-}
-
-.ble-connect-btn:active { background: rgba(90, 62, 40, 0.2); }
 
 /* ===== I Night Mode ===== */
 .i-night .reader-header {
@@ -540,11 +525,6 @@ body {
 
 .i-night .slider-popup label {
   color: rgba(196, 154, 158, 0.6);
-}
-
-.i-night .ble-connect-btn {
-  background: rgba(196, 154, 158, 0.15);
-  color: #c49a9e;
 }
 
 .i-night .ble-name {
@@ -1206,10 +1186,9 @@ body {
 
   <!-- BLE panel -->
   <div class="slider-popup ble-popup" id="blePopup">
-    <button class="ble-connect-btn" id="bleConnectBtn">Connect</button>
-    <div class="ble-status-row" id="bleStatusRow" style="display:none">
-      <span class="ble-dot on"></span>
-      <span class="ble-name" id="bleName"></span>
+    <div class="ble-status-row" id="bleRow" style="cursor:pointer">
+      <span class="ble-dot" id="bleDot"></span>
+      <span class="ble-name" id="bleName">Connect</span>
     </div>
   </div>
 </div>
@@ -2619,15 +2598,13 @@ let bleAudioCtx = null;
 let bleWakeLock = null;
 
 function updateBleUI(connected, name) {
+  const dot = document.getElementById('bleDot');
   const nameEl = document.getElementById('bleName');
-  const btn = document.getElementById('bleConnectBtn');
-  const statusRow = document.getElementById('bleStatusRow');
   const bleBtnEl = document.getElementById('bleBtn');
   const titleEl = document.getElementById('readerBookTitle');
   const readerView = document.getElementById('readerView');
-  btn.style.display = connected ? 'none' : '';
-  statusRow.style.display = connected ? 'flex' : 'none';
-  nameEl.textContent = name || '';
+  dot.className = 'ble-dot' + (connected ? ' on' : '');
+  nameEl.textContent = connected ? (name || 'Connected') : 'Connect';
   bleBtnEl.classList.toggle('ble-connected', connected);
   readerView.classList.toggle('i-night', connected);
   if (titleEl) {
@@ -2671,7 +2648,7 @@ function restoreReaderStyle() {
   applyReaderStyles();
 }
 
-document.getElementById('bleConnectBtn').onclick = async () => {
+document.getElementById('bleRow').onclick = async () => {
   if (bleDevice && bleDevice.gatt.connected) return;
   try {
     bleDevice = await navigator.bluetooth.requestDevice({
