@@ -2326,7 +2326,7 @@ function renderAnnotations() {
         e.stopPropagation();
         chapterOwnFilter[ch] = !chapterOwnFilter[ch];
         if (chapterOwnFilter[ch]) {
-          for (const hl of chHls) {
+          for (const hl of allChHls) {
             if (hl.killianOwnNote && !hl.killianOwnRevealed) {
               hl.killianOwnRevealed = true;
               highlights[hl.id] = hl;
