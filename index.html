@@ -1266,8 +1266,6 @@ body.i-night .hl-btn { color: var(--rose-light); }
     <div class="ann-title" id="annTitle">Notes</div>
     <div class="ann-header-right">
       <button class="ann-filter" id="annFilterBtn">✎</button>
-      <button class="ann-filter" id="annFilterReply">✉</button>
-      <button class="ann-filter" id="annFilterOwn" style="font-size:0.75em">✒</button>
       <button class="ann-export" id="exportBtn">✧</button>
       <button class="ann-close" id="annClose">✕</button>
     </div>
@@ -2207,22 +2205,11 @@ function closeAnnotationsPanel() {
 }
 
 let notesOnlyFilter = false;
-let killianReplyFilter = false;
-let killianOwnFilter = false;
 const chapterOwnFilter = {};
+const chapterOpenState = {};
 document.getElementById('annFilterBtn').onclick = () => {
   notesOnlyFilter = !notesOnlyFilter;
   document.getElementById('annFilterBtn').classList.toggle('active', notesOnlyFilter);
-  renderAnnotations();
-};
-document.getElementById('annFilterReply').onclick = () => {
-  killianReplyFilter = !killianReplyFilter;
-  document.getElementById('annFilterReply').classList.toggle('active', killianReplyFilter);
-  renderAnnotations();
-};
-document.getElementById('annFilterOwn').onclick = () => {
-  killianOwnFilter = !killianOwnFilter;
-  document.getElementById('annFilterOwn').classList.toggle('active', killianOwnFilter);
   renderAnnotations();
 };
 
@@ -2247,10 +2234,8 @@ function renderAnnotations() {
     return 0;
   }
   let hls = Object.values(highlights).sort((a, b) => cfiCompare(a.cfiRange, b.cfiRange));
-  if (!killianOwnFilter) hls = hls.filter(h => h.owner !== 'killian' || chapterOwnFilter[h.chapter]);
+  hls = hls.filter(h => h.owner !== 'killian' || chapterOwnFilter[h.chapter]);
   if (notesOnlyFilter) hls = hls.filter(h => h.note);
-  if (killianReplyFilter) hls = hls.filter(h => h.killianNote);
-  if (killianOwnFilter) hls = hls.filter(h => h.killianOwnNote);
 
   if (hls.length === 0) {
     list.innerHTML = '<div class="ann-empty">No notes yet. Start reading ♡</div>';
@@ -2289,7 +2274,8 @@ function renderAnnotations() {
     const isCurrentCh = ch === currentCh;
 
     const group = document.createElement('div');
-    group.className = 'ann-chapter-group' + (isCurrentCh ? ' open' : '');
+    const isOpen = ch in chapterOpenState ? chapterOpenState[ch] : isCurrentCh;
+    group.className = 'ann-chapter-group' + (isOpen ? ' open' : '');
 
     const allChHls = Object.values(highlights).filter(h => (h.chapter || 'Unknown') === ch);
     const hasReply = allChHls.some(h => h.killianNote);
@@ -2303,7 +2289,7 @@ function renderAnnotations() {
     const headerBtn = document.createElement('button');
     headerBtn.style.cssText = 'border:none;background:none;display:flex;align-items:center;gap:8px;text-align:left;font-size:inherit;cursor:pointer;padding:0;';
     headerBtn.innerHTML = `<span class="ann-chapter-arrow">▶</span><span class="ann-chapter-name">${escapeHTML(ch)}</span><span class="ann-chapter-count">(${chHls.length})</span>`;
-    headerBtn.onclick = () => { group.classList.toggle('open'); };
+    headerBtn.onclick = () => { group.classList.toggle('open'); chapterOpenState[ch] = group.classList.contains('open'); };
     header.appendChild(headerBtn);
 
     if (hasReply) {
@@ -2313,7 +2299,7 @@ function renderAnnotations() {
       revBtn.onclick = async (e) => {
         e.stopPropagation();
         const newState = !allReplyRevealed;
-        for (const hl of chHls) {
+        for (const hl of allChHls) {
           if (hl.killianNote) {
             hl.killianRevealed = newState;
             highlights[hl.id] = hl;
@@ -2371,14 +2357,14 @@ function renderAnnotations() {
         </div>`;
       }
 
-      if (hl.killianNote && (hl.killianRevealed || killianReplyFilter)) {
+      if (hl.killianNote && hl.killianRevealed) {
         html += `<div class="ann-note killian">
           <div class="ann-note-label">Killian ✉</div>
           ${escapeHTML(hl.killianNote)}
         </div>`;
       }
 
-      if (hl.killianOwnNote && (chapterOwnFilter[hl.chapter] || killianOwnFilter)) {
+      if (hl.killianOwnNote && chapterOwnFilter[hl.chapter]) {
         html += `<div class="ann-note killian">
           <div class="ann-note-label">Killian ✒</div>
           ${escapeHTML(hl.killianOwnNote)}
