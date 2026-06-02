@@ -2005,6 +2005,7 @@ function applyHighlight(hl) {
     );
     if (hasOverlap) color = 'rgba(196,154,158,0.3)';
     rendition.annotations.highlight(hl.cfiRange, { id: hl.id }, (e) => {
+      if (hl.owner === 'killian') return;
       e.preventDefault();
       showExistingHighlightMenu(hl.id, e);
     }, '', { fill: color, 'fill-opacity': '1', 'mix-blend-mode': 'multiply' });
@@ -2083,7 +2084,7 @@ document.getElementById('hlHighlight').onclick = async () => {
   if (!selectedCfiRange || !selectedText || !currentBook) return;
   hideHighlightMenu();
 
-  const existing = Object.values(highlights).find(h => h.cfiRange === selectedCfiRange);
+  const existing = Object.values(highlights).find(h => h.cfiRange === selectedCfiRange && h.owner === 'ferry');
   if (existing) { clearSelection(); return; }
 
   const hl = {
@@ -2111,7 +2112,7 @@ document.getElementById('hlNote').onclick = () => {
   if (!selectedCfiRange || !selectedText || !currentBook) return;
 
   // Check if highlight already exists for this range
-  const existing = Object.values(highlights).find(h => h.cfiRange === selectedCfiRange);
+  const existing = Object.values(highlights).find(h => h.cfiRange === selectedCfiRange && h.owner === 'ferry');
   if (existing) {
     showNoteInput(existing.id);
   } else {
