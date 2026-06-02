@@ -1582,6 +1582,7 @@ async function openBook(bookId) {
     // Load and apply highlights
     await loadHighlights(bookId);
     fetchKillianAnnotations(bookId).catch(() => {});
+    fetchKillianHighlights(bookId).catch(() => {});
     updateNotesCount();
     startReadingTimer();
 
@@ -1969,6 +1970,7 @@ async function loadHighlights(bookId) {
 function applyHighlight(hl) {
   if (!rendition) return;
   if (hl.killianNote && !hl.killianRevealed && hl.owner !== 'ferry') return;
+  if (hl.owner === 'killian' && hl.killianOwnNote && !hl.killianOwnRevealed) return;
   try {
     const color = hl.owner === 'killian' ? 'rgba(120,120,130,0.35)' : 'rgba(180,130,90,0.35)';
     rendition.annotations.highlight(hl.cfiRange, { id: hl.id }, (e) => {
@@ -2397,6 +2399,19 @@ function handleWSMessage(msg) {
       dbPut('highlights', hl);
     }
   }
+  if (msg.type === 'killian_highlight') {
+    const khl = msg.highlight;
+    if (khl && !highlights[khl.id]) {
+      const hl = {
+        id: khl.id, bookId: msg.bookId, text: khl.text, note: '',
+        killianOwnNote: khl.note, killianOwnRevealed: false,
+        cfiRange: khl.cfiRange, chapter: khl.chapter,
+        owner: 'killian', createdAt: khl.timestamp
+      };
+      highlights[khl.id] = hl;
+      dbPut('highlights', hl);
+    }
+  }
 }
 
 async function fetchKillianAnnotations(bookId) {
@@ -2415,6 +2430,31 @@ async function fetchKillianAnnotations(bookId) {
         hl.killianRevealed = false;
         highlights[hl.id] = hl;
         await dbPut('highlights', hl);
+      }
+    }
+  } catch (e) {}
+}
+
+async function fetchKillianHighlights(bookId) {
+  try {
+    const resp = await fetch(API_SERVER + '/api/killian-highlights', {
+      headers: { 'Authorization': 'Bearer killian-reader-2026' }
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const bookHls = data.highlights?.[bookId];
+    if (!bookHls) return;
+    for (const [id, khl] of Object.entries(bookHls)) {
+      if (!highlights[id]) {
+        const hl = {
+          id, bookId, text: khl.text, note: '',
+          killianOwnNote: khl.note, killianOwnRevealed: false,
+          cfiRange: khl.cfiRange, chapter: khl.chapter,
+          owner: 'killian', createdAt: khl.timestamp
+        };
+        highlights[id] = hl;
+        await dbPut('highlights', hl);
+        applyHighlight(hl);
       }
     }
   } catch (e) {}
