@@ -2228,6 +2228,7 @@ function renderAnnotations() {
     return 0;
   }
   let hls = Object.values(highlights).sort((a, b) => cfiCompare(a.cfiRange, b.cfiRange));
+  if (!killianOwnFilter) hls = hls.filter(h => h.owner !== 'killian' || chapterOwnFilter[h.chapter]);
   if (notesOnlyFilter) hls = hls.filter(h => h.note);
   if (killianReplyFilter) hls = hls.filter(h => h.killianNote);
   if (killianOwnFilter) hls = hls.filter(h => h.killianOwnNote);
