@@ -2272,8 +2272,9 @@ function renderAnnotations() {
     const group = document.createElement('div');
     group.className = 'ann-chapter-group' + (isCurrentCh ? ' open' : '');
 
-    const hasReply = chHls.some(h => h.killianNote);
-    const hasOwn = chHls.some(h => h.killianOwnNote);
+    const allChHls = Object.values(highlights).filter(h => (h.chapter || 'Unknown') === ch);
+    const hasReply = allChHls.some(h => h.killianNote);
+    const hasOwn = allChHls.some(h => h.killianOwnNote);
     const allReplyRevealed = hasReply && chHls.filter(h => h.killianNote).every(h => h.killianRevealed);
     const allOwnRevealed = hasOwn && chHls.filter(h => h.killianOwnNote).every(h => h.killianOwnRevealed);
 
