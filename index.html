@@ -2454,8 +2454,19 @@ async function fetchKillianHighlights(bookId) {
     });
     if (!resp.ok) return;
     const data = await resp.json();
-    const bookHls = data.highlights?.[bookId];
-    if (!bookHls) return;
+    const bookHls = data.highlights?.[bookId] || {};
+    const serverIds = new Set(Object.keys(bookHls));
+
+    // Remove stale Killian highlights not on server
+    for (const id in highlights) {
+      if (highlights[id].owner === 'killian' && !serverIds.has(id)) {
+        try { rendition.annotations.remove(highlights[id].cfiRange, 'highlight'); } catch(e) {}
+        delete highlights[id];
+        dbDelete('highlights', id);
+      }
+    }
+
+    // Add/update Killian highlights from server
     for (const [id, khl] of Object.entries(bookHls)) {
       if (!highlights[id]) {
         const hl = {
