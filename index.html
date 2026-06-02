@@ -2186,32 +2186,14 @@ document.getElementById('annFilterBtn').onclick = () => {
   document.getElementById('annFilterBtn').classList.toggle('active', notesOnlyFilter);
   renderAnnotations();
 };
-document.getElementById('annFilterReply').onclick = async () => {
+document.getElementById('annFilterReply').onclick = () => {
   killianReplyFilter = !killianReplyFilter;
   document.getElementById('annFilterReply').classList.toggle('active', killianReplyFilter);
-  if (killianReplyFilter) {
-    for (const id in highlights) {
-      if (highlights[id].killianNote && !highlights[id].killianRevealed) {
-        highlights[id].killianRevealed = true;
-        await dbPut('highlights', highlights[id]);
-      }
-    }
-    reapplyAllHighlights();
-  }
   renderAnnotations();
 };
-document.getElementById('annFilterOwn').onclick = async () => {
+document.getElementById('annFilterOwn').onclick = () => {
   killianOwnFilter = !killianOwnFilter;
   document.getElementById('annFilterOwn').classList.toggle('active', killianOwnFilter);
-  if (killianOwnFilter) {
-    for (const id in highlights) {
-      if (highlights[id].killianOwnNote && !highlights[id].killianOwnRevealed) {
-        highlights[id].killianOwnRevealed = true;
-        await dbPut('highlights', highlights[id]);
-      }
-    }
-    reapplyAllHighlights();
-  }
   renderAnnotations();
 };
 
@@ -2354,14 +2336,14 @@ function renderAnnotations() {
         </div>`;
       }
 
-      if (hl.killianNote && hl.killianRevealed) {
+      if (hl.killianNote && (hl.killianRevealed || killianReplyFilter)) {
         html += `<div class="ann-note killian">
           <div class="ann-note-label">Killian ✉</div>
           ${escapeHTML(hl.killianNote)}
         </div>`;
       }
 
-      if (hl.killianOwnNote && hl.killianOwnRevealed) {
+      if (hl.killianOwnNote && (hl.killianOwnRevealed || killianOwnFilter)) {
         html += `<div class="ann-note killian">
           <div class="ann-note-label">Killian ✒</div>
           ${escapeHTML(hl.killianOwnNote)}
