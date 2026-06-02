@@ -1995,17 +1995,23 @@ function reapplyAllHighlights() {
 
 function applyHighlight(hl) {
   if (!rendition) return;
-  if (hl.killianNote && !hl.killianRevealed && hl.owner !== 'ferry') return;
-  if (hl.owner === 'killian' && hl.killianOwnNote && !hl.killianOwnRevealed) return;
+  // Killian's highlights: completely invisible until Ferry clicks ✒ to reveal
+  if (hl.owner === 'killian' && !hl.killianOwnRevealed) return;
   try {
-    let color = hl.owner === 'killian' ? 'rgba(120,120,130,0.35)' : 'rgba(180,130,90,0.35)';
-    const hasOverlap = Object.values(highlights).some(other =>
-      other.id !== hl.id && other.cfiRange === hl.cfiRange &&
-      other.owner !== hl.owner && (other.owner !== 'killian' || other.killianOwnRevealed)
-    );
-    if (hasOverlap) color = 'rgba(196,154,158,0.3)';
+    let color;
+    if (hl.owner === 'ferry') {
+      // Ferry's highlight: warm brown normally, rose if Killian highlighted same range AND revealed
+      const killianOverlap = Object.values(highlights).some(other =>
+        other.id !== hl.id && other.cfiRange === hl.cfiRange &&
+        other.owner === 'killian' && other.killianOwnRevealed
+      );
+      color = killianOverlap ? 'rgba(196,154,158,0.3)' : 'rgba(180,130,90,0.35)';
+    } else {
+      // Killian-only range (already revealed, no Ferry overlap): gray
+      color = 'rgba(120,120,130,0.35)';
+    }
     rendition.annotations.highlight(hl.cfiRange, { id: hl.id }, (e) => {
-      if (hl.owner === 'killian') return;
+      if (hl.owner === 'killian') return; // don't block text selection on Killian annotations
       e.preventDefault();
       showExistingHighlightMenu(hl.id, e);
     }, '', { fill: color, 'fill-opacity': '1', 'mix-blend-mode': 'multiply' });
