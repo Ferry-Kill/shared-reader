@@ -1691,6 +1691,10 @@ async function openBook(bookId) {
 
     showLoading(false);
 
+    if (bleDevice && bleDevice.gatt.connected) {
+      updateBleUI(true, bleDevice.name);
+    }
+
   } catch (err) {
     console.error('Open book error:', err);
     showLoading(false);
