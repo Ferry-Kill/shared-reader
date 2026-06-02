@@ -2486,16 +2486,16 @@ async function fetchKillianHighlights(bookId) {
     const serverIds = new Set(Object.keys(bookHls));
 
     // Remove stale Killian highlights not on server
+    let changed = false;
     for (const id in highlights) {
       if (highlights[id].owner === 'killian' && !serverIds.has(id)) {
-        try { rendition.annotations.remove(highlights[id].cfiRange, 'highlight'); } catch(e) {}
         delete highlights[id];
         dbDelete('highlights', id);
+        changed = true;
       }
     }
 
-    // Add/update Killian highlights from server
-    let added = false;
+    // Add Killian highlights from server
     for (const [id, khl] of Object.entries(bookHls)) {
       if (!highlights[id]) {
         const hl = {
@@ -2506,10 +2506,10 @@ async function fetchKillianHighlights(bookId) {
         };
         highlights[id] = hl;
         await dbPut('highlights', hl);
-        added = true;
+        changed = true;
       }
     }
-    if (added) reapplyAllHighlights();
+    if (changed) reapplyAllHighlights();
   } catch (e) {}
 }
 
