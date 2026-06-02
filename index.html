@@ -2495,6 +2495,7 @@ async function fetchKillianHighlights(bookId) {
     }
 
     // Add/update Killian highlights from server
+    let added = false;
     for (const [id, khl] of Object.entries(bookHls)) {
       if (!highlights[id]) {
         const hl = {
@@ -2505,9 +2506,10 @@ async function fetchKillianHighlights(bookId) {
         };
         highlights[id] = hl;
         await dbPut('highlights', hl);
-        applyHighlight(hl);
+        added = true;
       }
     }
+    if (added) reapplyAllHighlights();
   } catch (e) {}
 }
 
