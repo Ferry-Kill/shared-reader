@@ -2357,7 +2357,7 @@ function renderAnnotations() {
         </div>`;
       }
 
-      if (hl.killianOwnNote && (hl.killianOwnRevealed || killianOwnFilter)) {
+      if (hl.killianOwnNote && (chapterOwnFilter[hl.chapter] || killianOwnFilter)) {
         html += `<div class="ann-note killian">
           <div class="ann-note-label">Killian ✒</div>
           ${escapeHTML(hl.killianOwnNote)}
