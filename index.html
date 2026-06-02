@@ -1963,18 +1963,12 @@ function renderToc() {
 
 // ===== Highlights =====
 async function loadHighlights(bookId) {
-  // Remove all existing annotations first
-  if (rendition) {
-    for (const id in highlights) {
-      try { rendition.annotations.remove(highlights[id].cfiRange, 'highlight'); } catch(e) {}
-    }
-  }
   const allHL = await dbGetAll('highlights');
   highlights = {};
   allHL.filter(h => h.bookId === bookId).forEach(h => {
     highlights[h.id] = h;
-    applyHighlight(h);
   });
+  reapplyAllHighlights();
 }
 
 function reapplyAllHighlights() {
@@ -1982,12 +1976,20 @@ function reapplyAllHighlights() {
   for (const id in highlights) {
     try { rendition.annotations.remove(highlights[id].cfiRange, 'highlight'); } catch(e) {}
   }
-  const applied = new Set();
+  // Group by cfiRange, render exactly one per range (prefer Ferry's for click handler)
+  const byRange = {};
   for (const id in highlights) {
     const hl = highlights[id];
-    if (applied.has(hl.cfiRange)) continue;
-    applyHighlight(hl);
-    applied.add(hl.cfiRange);
+    const key = hl.cfiRange;
+    if (!byRange[key]) byRange[key] = [];
+    byRange[key].push(hl);
+  }
+  for (const range in byRange) {
+    const group = byRange[range];
+    const ferry = group.find(h => h.owner === 'ferry');
+    const killian = group.find(h => h.owner === 'killian');
+    const toRender = ferry || killian;
+    if (toRender) applyHighlight(toRender);
   }
 }
 
@@ -2097,7 +2099,7 @@ document.getElementById('hlHighlight').onclick = async () => {
 
   highlights[hl.id] = hl;
   await dbPut('highlights', hl);
-  applyHighlight(hl);
+  reapplyAllHighlights();
   clearSelection();
   updateNotesCount();
   syncHighlight(hl);
@@ -2125,7 +2127,7 @@ document.getElementById('hlNote').onclick = () => {
     };
     highlights[hl.id] = hl;
     dbPut('highlights', hl);
-    applyHighlight(hl);
+    reapplyAllHighlights();
     clearSelection();
     showNoteInput(hl.id);
   }
@@ -2157,12 +2159,9 @@ async function removeHighlight(hlId) {
   const hl = highlights[hlId];
   if (!hl) return;
 
-  try {
-    rendition.annotations.remove(hl.cfiRange, 'highlight');
-  } catch (e) {}
-
   delete highlights[hlId];
   await dbDelete('highlights', hlId);
+  reapplyAllHighlights();
   updateNotesCount();
 
   if (ws && ws.readyState === 1) {
@@ -2489,6 +2488,7 @@ async function fetchKillianHighlights(bookId) {
     let changed = false;
     for (const id in highlights) {
       if (highlights[id].owner === 'killian' && !serverIds.has(id)) {
+        try { rendition.annotations.remove(highlights[id].cfiRange, 'highlight'); } catch(e) {}
         delete highlights[id];
         dbDelete('highlights', id);
         changed = true;
