@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ferillove-read-v3';
+const CACHE_NAME = 'ferillove-read-v4';
 const urlsToCache = ['./', './index.html', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
