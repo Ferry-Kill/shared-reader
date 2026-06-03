@@ -18,6 +18,7 @@
 <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; background: #2a4030; }
 
 :root {
   --bg: #54402f;
@@ -38,8 +39,8 @@ body {
   background: linear-gradient(180deg, #c8d8c4 0%, #7a9a70 45%, #2a4030 100%);
   background-color: #7a9a70;
   color: var(--text);
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100%;
+  min-height: -webkit-fill-available;
   overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
