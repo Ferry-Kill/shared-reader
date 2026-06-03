@@ -1639,6 +1639,7 @@ async function openBook(bookId) {
         const forceStyle = doc.createElement('style');
         forceStyle.textContent = "* { font-family: 'Noto Serif SC', 'Noto Sans SC', serif !important; }";
         doc.head.appendChild(forceStyle);
+        doc.fonts?.ready.then(() => reapplyAllHighlights());
         doc.addEventListener('contextmenu', (e) => e.preventDefault());
         // Fix: prevent text selection from causing page jumps (horizontal & vertical)
         // Key: capture scroll positions on touchstart (BEFORE browser auto-scrolls
