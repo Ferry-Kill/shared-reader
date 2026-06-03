@@ -1525,7 +1525,6 @@ function blobToDataURL(blob) {
 
 // ===== Reader =====
 async function openBook(bookId) {
-  enterFullscreen();
   showLoading(true);
 
   try {
@@ -1749,7 +1748,6 @@ async function saveProgress(location) {
 }
 
 function goToShelf() {
-  enterFullscreen();
   saveTodayReading();
   pauseTimer();
   if (book) {
@@ -1770,16 +1768,6 @@ function goToShelf() {
   renderShelf();
 }
 
-function enterFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  }
-}
-function exitFullscreen() {
-  if (document.fullscreenElement) {
-    document.exitFullscreen().catch(() => {});
-  }
-}
 function toggleUI() {
   uiVisible = !uiVisible;
   document.getElementById('readerHeader').classList.toggle('show', uiVisible);
@@ -1790,33 +1778,6 @@ function toggleUI() {
     document.getElementById('statsPopup').classList.remove('show');
     document.getElementById('blePopup').classList.remove('show');
   }
-  const container = document.getElementById('epubContainer');
-  const savedCfi = currentCfi;
-  container.style.opacity = '0';
-  if (uiVisible) {
-    exitFullscreen();
-  } else {
-    enterFullscreen();
-  }
-  let restored = false;
-  const restore = async () => {
-    if (restored) return;
-    restored = true;
-    if (rendition) {
-      rendition.resize();
-      if (savedCfi) {
-        try { await rendition.display(savedCfi); } catch(e) {}
-      }
-      const doc = rendition.getContents()[0]?.document;
-      if (doc && doc.fonts) {
-        await doc.fonts.ready;
-      }
-      reapplyAllHighlights();
-    }
-    container.style.opacity = '1';
-  };
-  document.addEventListener('fullscreenchange', () => setTimeout(restore, 50), { once: true });
-  setTimeout(restore, 500);
 }
 
 document.getElementById('backBtn').onclick = goToShelf;
@@ -3006,10 +2967,6 @@ async function init() {
 
   await openDB();
   renderShelf();
-  document.addEventListener('click', function _fs() {
-    enterFullscreen();
-    document.removeEventListener('click', _fs);
-  }, { once: true });
   connectWS();
   connectIRelay();
 
