@@ -1782,11 +1782,6 @@ function exitFullscreen() {
 }
 function toggleUI() {
   uiVisible = !uiVisible;
-  if (uiVisible) {
-    exitFullscreen();
-  } else {
-    enterFullscreen();
-  }
   document.getElementById('readerHeader').classList.toggle('show', uiVisible);
   document.getElementById('bottomBar').classList.toggle('show', uiVisible);
   if (!uiVisible) {
@@ -1795,6 +1790,33 @@ function toggleUI() {
     document.getElementById('statsPopup').classList.remove('show');
     document.getElementById('blePopup').classList.remove('show');
   }
+  const container = document.getElementById('epubContainer');
+  const savedCfi = currentCfi;
+  container.style.opacity = '0';
+  if (uiVisible) {
+    exitFullscreen();
+  } else {
+    enterFullscreen();
+  }
+  let restored = false;
+  const restore = async () => {
+    if (restored) return;
+    restored = true;
+    if (rendition) {
+      rendition.resize();
+      if (savedCfi) {
+        try { await rendition.display(savedCfi); } catch(e) {}
+      }
+      const doc = rendition.getContents()[0]?.document;
+      if (doc && doc.fonts) {
+        await doc.fonts.ready;
+      }
+      reapplyAllHighlights();
+    }
+    container.style.opacity = '1';
+  };
+  document.addEventListener('fullscreenchange', () => setTimeout(restore, 50), { once: true });
+  setTimeout(restore, 500);
 }
 
 document.getElementById('backBtn').onclick = goToShelf;
