@@ -45,7 +45,8 @@ body {
 }
 
 /* ===== Bookshelf ===== */
-.view { display: none; width: 100%; height: 100vh; }
+.view { display: none; width: 100%; height: 100dvh; height: 100vh; }
+@supports (height: 100dvh) { .view { height: 100dvh; } }
 .view.active { display: flex; flex-direction: column; }
 
 .shelf-header {
@@ -1567,7 +1568,13 @@ async function openBook(bookId) {
     }
 
     setTimeout(() => { if (rendition) rendition.resize(); }, 300);
-    window.addEventListener('resize', () => { if (rendition) rendition.resize(); });
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      if (!rendition) return;
+      rendition.resize();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { reapplyAllHighlights(); }, 400);
+    });
 
     // Restore saved settings
     const savedBright = localStorage.getItem('reader_brightness');
@@ -2642,7 +2649,7 @@ document.addEventListener('visibilitychange', () => {
     if (currentBook) { syncProgress(); saveTodayReading(); pauseTimer(); }
   } else {
     if (currentBook) resumeTimer();
-    if (rendition) setTimeout(() => rendition.resize(), 200);
+    if (rendition) setTimeout(() => { rendition.resize(); setTimeout(() => reapplyAllHighlights(), 400); }, 200);
     if (bleDevice && bleDevice.gatt.connected && !bleWakeLock && 'wakeLock' in navigator) {
       navigator.wakeLock.request('screen').then(wl => {
         bleWakeLock = wl;
