@@ -242,8 +242,8 @@ body {
   z-index: 10;
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  padding-top: calc(8px + env(safe-area-inset-top));
+  padding: 14px 16px;
+  padding-top: calc(14px + env(safe-area-inset-top));
   background: #fff;
   transform: translateY(-100%);
   transition: transform 0.25s ease;
@@ -1525,6 +1525,7 @@ function blobToDataURL(blob) {
 
 // ===== Reader =====
 async function openBook(bookId) {
+  enterFullscreen();
   showLoading(true);
 
   try {
@@ -1748,6 +1749,7 @@ async function saveProgress(location) {
 }
 
 function goToShelf() {
+  enterFullscreen();
   saveTodayReading();
   pauseTimer();
   if (book) {
@@ -1768,8 +1770,23 @@ function goToShelf() {
   renderShelf();
 }
 
+function enterFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+function exitFullscreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
 function toggleUI() {
   uiVisible = !uiVisible;
+  if (uiVisible) {
+    exitFullscreen();
+  } else {
+    enterFullscreen();
+  }
   document.getElementById('readerHeader').classList.toggle('show', uiVisible);
   document.getElementById('bottomBar').classList.toggle('show', uiVisible);
   if (!uiVisible) {
@@ -2967,6 +2984,10 @@ async function init() {
 
   await openDB();
   renderShelf();
+  document.addEventListener('click', function _fs() {
+    enterFullscreen();
+    document.removeEventListener('click', _fs);
+  }, { once: true });
   connectWS();
   connectIRelay();
 
