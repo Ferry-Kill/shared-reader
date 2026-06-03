@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d0d0f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,13 +39,14 @@ body {
   background-color: #7a9a70;
   color: var(--text);
   min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
 }
 
 /* ===== Bookshelf ===== */
-.view { display: none; width: 100%; height: 100vh; }
+.view { display: none; width: 100%; height: 100vh; height: 100dvh; }
 .view.active { display: flex; flex-direction: column; }
 
 .shelf-header {
@@ -294,6 +295,7 @@ body {
 #epubContainer {
   width: 100%;
   height: calc(100vh - 48px);
+  height: calc(100dvh - 48px);
   background: var(--bg-reader);
 }
 
