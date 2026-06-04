@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,13 +11,27 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Ferillove · Read</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fonts/noto-serif-sc.css">
+<style>
+@font-face { font-family: 'Caveat'; font-style: normal; font-weight: 400; font-display: block; src: url(fonts/caveat-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Caveat'; font-style: normal; font-weight: 500; font-display: block; src: url(fonts/caveat-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Caveat'; font-style: normal; font-weight: 600; font-display: block; src: url(fonts/caveat-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Caveat'; font-style: normal; font-weight: 400; font-display: block; src: url(fonts/caveat-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Caveat'; font-style: normal; font-weight: 500; font-display: block; src: url(fonts/caveat-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Caveat'; font-style: normal; font-weight: 600; font-display: block; src: url(fonts/caveat-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+#splash-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 9999;
+  background: url('splash-bg.jpg') center/cover no-repeat;
+  transition: opacity 0.5s ease;
+}
+#splash-screen.fade-out { opacity: 0; pointer-events: none; }
 
 :root {
   --bg: #54402f;
@@ -51,6 +65,7 @@ body {
 
 .shelf-header {
   padding: 50px 30px 20px;
+  padding-top: calc(50px + env(safe-area-inset-top, 0px));
   text-align: center;
   position: relative;
 }
@@ -84,7 +99,7 @@ body {
 
 .shelf-title {
   font-family: 'Caveat', cursive;
-  font-size: 2.4em;
+  font-size: 1.9em;
   font-weight: 500;
   color: #fff;
   letter-spacing: 0.05em;
@@ -362,7 +377,7 @@ body {
 
 .slider-popup {
   position: fixed;
-  bottom: 75px;
+  bottom: calc(75px + env(safe-area-inset-bottom, 0px));
   left: 20px;
   right: 20px;
   background: #fff;
@@ -1150,6 +1165,8 @@ body.i-night .hl-btn { color: var(--rose-light); }
 </head>
 <body>
 
+<div id="splash-screen"></div>
+
 <!-- Moon texture filter -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
@@ -1290,6 +1307,18 @@ body.i-night .hl-btn { color: var(--rose-light); }
 </div>
 
 <script>
+// Splash screen: fade out after 2 seconds
+setTimeout(() => {
+  const sp = document.getElementById('splash-screen');
+  if (sp) { sp.classList.add('fade-out'); setTimeout(() => sp.remove(), 600); }
+}, 2000);
+
+// Preload Noto Serif SC font CSS for epub iframe injection
+let _notoFontCSS = '';
+fetch('fonts/noto-serif-sc.css').then(r => r.text()).then(css => {
+  _notoFontCSS = css.replace(/url\(fonts\//g, `url(${location.origin}/fonts/`);
+});
+
 const DB_NAME = 'ferillove-reader';
 const DB_VERSION = 1;
 const RELAY_SERVER = 'wss://killian-i.duckdns.org:8444';
@@ -1632,14 +1661,11 @@ async function openBook(bookId) {
       const doc = rendition.getContents()[0]?.document;
       if (doc && !doc._setup) {
         doc._setup = true;
-        const fontLink = doc.createElement('link');
-        fontLink.rel = 'stylesheet';
-        fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&display=swap';
-        doc.head.appendChild(fontLink);
-        const forceStyle = doc.createElement('style');
-        forceStyle.textContent = "* { font-family: 'Noto Serif SC', 'Noto Sans SC', serif !important; }";
-        doc.head.appendChild(forceStyle);
-        doc.fonts?.ready.then(() => reapplyAllHighlights());
+        doc.documentElement.style.visibility = 'hidden';
+        const fontStyle = doc.createElement('style');
+        fontStyle.textContent = _notoFontCSS + "\n* { font-family: 'Noto Serif SC', 'Noto Sans SC', serif !important; }";
+        doc.head.appendChild(fontStyle);
+        doc.fonts?.ready.then(() => { doc.documentElement.style.visibility = 'visible'; reapplyAllHighlights(); });
         doc.addEventListener('contextmenu', (e) => e.preventDefault());
         // Fix: prevent text selection from causing page jumps (horizontal & vertical)
         // Key: capture scroll positions on touchstart (BEFORE browser auto-scrolls
@@ -1765,6 +1791,9 @@ function goToShelf() {
   document.getElementById('statsPopup').classList.remove('show');
   uiVisible = false;
   hideHighlightMenu();
+  if (window.Capacitor?.Plugins?.SystemBars) {
+    window.Capacitor.Plugins.SystemBars.hide();
+  }
   renderShelf();
 }
 
@@ -1772,6 +1801,14 @@ function toggleUI() {
   uiVisible = !uiVisible;
   document.getElementById('readerHeader').classList.toggle('show', uiVisible);
   document.getElementById('bottomBar').classList.toggle('show', uiVisible);
+  if (window.Capacitor?.Plugins?.SystemBars) {
+    if (uiVisible) {
+      const color = document.body.classList.contains('i-night') ? '#0d0d0f' : '#ffffff';
+      window.Capacitor.Plugins.SystemBars.show({ color });
+    } else {
+      window.Capacitor.Plugins.SystemBars.hide();
+    }
+  }
   if (!uiVisible) {
     document.getElementById('brightPopup').classList.remove('show');
     document.getElementById('fontPopup').classList.remove('show');
@@ -1812,7 +1849,7 @@ function applyReaderStyles() {
       'font-family': fontCSS,
       'font-weight': '500 !important',
       'line-height': lineHeight + ' !important',
-      'padding': '30px 20px !important',
+      'padding': '75px 20px 45px !important',
       'font-size': fontSize + 'px !important',
       'margin': '0 !important'
     },
@@ -2175,6 +2212,7 @@ async function removeHighlight(hlId) {
   const hl = highlights[hlId];
   if (!hl) return;
 
+  try { rendition.annotations.remove(hl.cfiRange, 'highlight'); } catch(e) {}
   delete highlights[hlId];
   await dbDelete('highlights', hlId);
   reapplyAllHighlights();
@@ -2819,7 +2857,7 @@ function applyNightReaderStyle() {
       'font-family': fontCSS,
       'font-weight': '500 !important',
       'line-height': lineHeight + ' !important',
-      'padding': '30px 20px !important',
+      'padding': '75px 20px 45px !important',
       'font-size': fontSize + 'px !important',
       'margin': '0 !important'
     },
